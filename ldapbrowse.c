@@ -19,6 +19,7 @@ void curses_init()
 	noecho();
 	cbreak();
 	keypad(stdscr, TRUE);
+	curs_set(0);
 }
 
 void ldap_load_subtree(TREENODE * root)
@@ -26,9 +27,7 @@ void ldap_load_subtree(TREENODE * root)
 	LDAPMessage *msg;
 	if (ldap_search_s(ld, root->value, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
 	    != LDAP_SUCCESS)
-	  {
-		  ldap_perror(ld, "ldap_search_s");
-	  }
+		ldap_perror(ld, "ldap_search_s");
 
 	tree_node_remove_childs(root);
 
@@ -48,15 +47,30 @@ void hrule(unsigned line)
 		addch('-');
 }
 
-void selection_changed(TREENODE * selection)
+void selection_changed(WINDOW * win, TREENODE * selection)
 {
-	move(LINES / 2 + 2, 0);
-	printw("selected ");
-	printw(selection->value);
+	wmove(win, 0, 0);
+	LDAPMessage *msg;
+	if (ldap_search_s(ld, selection->value, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
+	    != LDAP_SUCCESS)
+		ldap_perror(ld, "ldap_search_s");
+
+	LDAPMessage *entry;
+	BerValue *pber;
+	char *attr;
+	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
+	     attr = ldap_next_attribute(ld, entry, pber))
+	  {
+		  waddstr(win, attr);
+		  waddstr(win, "\n\r");
+	  }
+	ber_free(pber, 0);
+	wrefresh(win);
 }
 
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
+	WINDOW *attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
 	treeview = treeview_init(root);
 
 	treeview_set_format(treeview, LINES / 2, 1);
@@ -75,7 +89,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 		    {
 		    case KEY_DOWN:
 			    treeview_driver(treeview, REQ_DOWN_ITEM);
-			    selection_changed(selected_node);
+			    selection_changed(attrwin, selected_node);
 			    break;
 
 		    case KEY_RIGHT:
@@ -98,7 +112,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			    break;
 		    case KEY_UP:
 			    treeview_driver(treeview, REQ_UP_ITEM);
-			    selection_changed(selected_node);
+			    selection_changed(attrwin, selected_node);
 			    break;
 		    }
 
