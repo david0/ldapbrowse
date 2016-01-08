@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <curses.h>
 #include <menu.h>
@@ -127,22 +128,46 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 int main(int argc, char *argv[])
 {
-	curses_init();
+	char *ldap_host = "127.0.0.1";
+	char *bind_dn = "";
+	char *password = "";
+	char *base = NULL;
+	unsigned port = 389;
 
-	char *ldap_host;
-	char *bind_dn;
-	char *root_pw;
-	char *base;
-
-	if (argc < 4)
+	while (true)
 	{
-		fprintf(stderr, "USAGE: %s [host] [binddn] [passwd]\n", argv[0]);
-		return -1;
-	}
+		int option_index = 0;
+		char c = getopt(argc, argv, "h:p:w:D:b:");
 
-	ldap_host = argv[1];
-	bind_dn = argv[2];
-	root_pw = argv[3];
+		if (c == -1)	// check for end of options
+			break;
+
+		switch (c)
+		{
+		case 'h':
+			ldap_host = optarg;
+			break;
+
+		case 'p':
+			port = atoi(optarg);
+			break;
+
+		case 'w':
+			password = optarg;
+			break;
+
+		case 'D':
+			bind_dn = optarg;
+			break;
+
+		case 'b':
+			base = optarg;
+			break;
+
+		default:
+			abort();
+		}
+	}
 
 	if ((ld = ldap_init(ldap_host, 16611)) == NULL)
 	{
@@ -150,26 +175,34 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (ldap_bind_s(ld, bind_dn, root_pw, LDAP_AUTH_SIMPLE) != LDAP_SUCCESS)
+	if (ldap_bind_s(ld, bind_dn, password, LDAP_AUTH_SIMPLE) != LDAP_SUCCESS)
 	{
 		ldap_perror(ld, "ldap_bind");
 		exit(EXIT_FAILURE);
 	}
 
 	LDAPMessage *msg;
-	if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
+	if (!base)
 	{
-		ldap_perror(ld, "ldap_search_s");
+		char **values;
+
+		if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) !=
+		    LDAP_SUCCESS)
+		{
+			ldap_perror(ld, "ldap_search_s");
+			exit(EXIT_FAILURE);
+		}
+
+		if (!(values = ldap_get_values(ld, msg, "namingContexts")))
+		{
+			ldap_perror(ld, "ldap_get_values");
+		}
+
+		base = values[0];
 	}
 
-	char **values;
-	if (!(values = ldap_get_values(ld, msg, "namingContexts")))
-	{
-		ldap_perror(ld, "ldap_get_values");
-	}
-
-	base = values[0];
-	assert(base != NULL);
+	if (!base)
+		printf("no baseDn given and server does not supportt namingContexts\n");
 
 	if (ldap_search_s(ld, base, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
 	    != LDAP_SUCCESS)
@@ -181,6 +214,8 @@ int main(int argc, char *argv[])
 	root->value = strdup(base);
 
 	ldap_load_subtree(root);
+
+	curses_init();
 
 	render(root, ldap_load_subtree);
 
