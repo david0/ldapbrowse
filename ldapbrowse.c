@@ -40,13 +40,6 @@ void ldap_load_subtree(TREENODE * root)
 	  }
 }
 
-void hrule(unsigned line)
-{
-	move(line, 0);
-	for (unsigned col = 0; col < COLS; col++)
-		addch('-');
-}
-
 void selection_changed(WINDOW * win, TREENODE * selection)
 {
 	werase(win);
@@ -88,7 +81,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	refresh();
 
-	hrule(LINES / 2 + 1);
+	mvhline(LINES / 2 + 1, 0, 0, COLS);
 
 	int c;
 	while ((c = getch()) != KEY_F(1))
@@ -126,7 +119,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			    break;
 		    }
 
-		  hrule(LINES / 2 + 1);
+			mvhline(LINES / 2 + 1, 0, 0, COLS);
 
 	  }
 
