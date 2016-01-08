@@ -62,6 +62,16 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	     attr = ldap_next_attribute(ld, entry, pber))
 	  {
 		  waddstr(win, attr);
+		  waddstr(win, ": ");
+
+		  char **values;
+		  if (!(values = ldap_get_values(ld, msg, attr)))
+		    {
+			    ldap_perror(ld, "ldap_get_values");
+		    }
+
+		  waddstr(win, values[0]);	//FIXME: multi-value
+
 		  waddstr(win, "\n\r");
 	  }
 	ber_free(pber, 0);
