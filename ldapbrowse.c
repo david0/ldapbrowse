@@ -49,7 +49,7 @@ void hrule(unsigned line)
 
 void selection_changed(WINDOW * win, TREENODE * selection)
 {
-	wmove(win, 0, 0);
+	werase(win);
 	LDAPMessage *msg;
 	if (ldap_search_s(ld, selection->value, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
 	    != LDAP_SUCCESS)
