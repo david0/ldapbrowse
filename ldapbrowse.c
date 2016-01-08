@@ -41,6 +41,20 @@ void ldap_load_subtree(TREENODE * root)
 	  }
 }
 
+void hrule(unsigned line)
+{
+	move(line, 0);
+	for (unsigned col = 0; col < COLS; col++)
+		addch('-');
+}
+
+void selection_changed(TREENODE * selection)
+{
+	move(LINES / 2 + 2, 0);
+	printw("selected ");
+	printw(selection->value);
+}
+
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
 	treeview = treeview_init(root);
@@ -49,6 +63,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	treeview_post(treeview);
 
 	refresh();
+
+	hrule(LINES / 2 + 1);
 
 	int c;
 	while ((c = getch()) != KEY_F(1))
@@ -59,6 +75,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 		    {
 		    case KEY_DOWN:
 			    treeview_driver(treeview, REQ_DOWN_ITEM);
+			    selection_changed(selected_node);
 			    break;
 
 		    case KEY_RIGHT:
@@ -81,8 +98,12 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			    break;
 		    case KEY_UP:
 			    treeview_driver(treeview, REQ_UP_ITEM);
+			    selection_changed(selected_node);
 			    break;
 		    }
+
+		  hrule(LINES / 2 + 1);
+
 	  }
 
 	free(treeview);
