@@ -40,7 +40,7 @@ ITEM **items_from_tree(TREENODE * root)
 	return tree_item_dfs(root, i, 0);
 }
 
-MENU *treeview_menu_init(TREENODE * root)
+TREEVIEW *treeview_init(TREENODE * root)
 {
 	return new_menu((ITEM **) items_from_tree(root));
 }
@@ -57,69 +57,39 @@ ITEM *item_for_node(ITEM ** item, TREENODE * n)
 	return NULL;
 }
 
-void update_menu_items(MENU * menu, TREENODE * root)
+void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols)
 {
-	unpost_menu(menu);
-	ITEM **items = menu_items(menu);
-	set_menu_items(menu, NULL);
+	set_menu_format(tv, rows, cols);
+}
+
+void treeview_post(TREEVIEW * tv)
+{
+	post_menu(tv);
+}
+
+void treeview_set_tree(TREEVIEW * tv, TREENODE * root)
+{
+	unpost_menu(tv);
+	ITEM **items = menu_items(tv);
+	set_menu_items(tv, NULL);
 	free(items);
 
-	set_menu_items(menu, items_from_tree(root));
-	post_menu(menu);
+	set_menu_items(tv, items_from_tree(root));
+	post_menu(tv);
 
 }
 
-void treeview_render(TREENODE * root, void (expand_callback) (TREENODE *))
+TREENODE *treeview_current_node(TREEVIEW * tv)
 {
-	MENU *menu = treeview_menu_init(root);
+	return item_userptr(current_item(tv));
+}
 
-	set_menu_format(menu, LINES / 2, 1);
+void treeview_set_current(TREEVIEW * tv, TREENODE * node)
+{
+	set_current_item(tv, item_for_node(menu_items(tv), node));
+}
 
-	post_menu(menu);
-	refresh();
-
-	int c;
-	while ((c = getch()) != KEY_F(1))
-	  {
-		  TREENODE *selected_node = item_userptr(current_item(menu));
-
-		  switch (c)
-		    {
-		    case KEY_DOWN:
-			    menu_driver(menu, REQ_DOWN_ITEM);
-			    break;
-
-		    case KEY_RIGHT:
-			    {
-				    expand_callback(selected_node);
-				    /*
-				       TREENODE *new_node = tree_node_alloc();
-				       asprintf(&(new_node->value), "%s sub", selected_node->value);
-				       tree_node_append_child(selected_node, new_node);                             
-				     */
-				    update_menu_items(menu, root);
-				    set_current_item(menu,
-						     item_for_node(menu_items(menu),
-								   selected_node));
-				    break;
-			    }
-
-		    case KEY_LEFT:
-			    {
-				    tree_node_remove_childs(selected_node);
-
-				    update_menu_items(menu, root);
-				    set_current_item(menu,
-						     item_for_node(menu_items(menu),
-								   selected_node));
-			    }
-
-			    break;
-		    case KEY_UP:
-			    menu_driver(menu, REQ_UP_ITEM);
-			    break;
-		    }
-	  }
-
-	free(menu);
+void treeview_driver(TREEVIEW * tv, int c)
+{
+	menu_driver(tv, c);
 }

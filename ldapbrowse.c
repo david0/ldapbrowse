@@ -10,6 +10,7 @@
 #include "treeview.h"
 
 LDAP *ld;
+TREEVIEW *treeview;
 
 void curses_init()
 {
@@ -38,6 +39,53 @@ void ldap_load_subtree(TREENODE * root)
 		  child->value = ldap_get_dn(ld, entry);
 		  tree_node_append_child(root, child);
 	  }
+}
+
+void render(TREENODE * root, void (expand_callback) (TREENODE *))
+{
+	treeview = treeview_init(root);
+
+	treeview_set_format(treeview, LINES / 2, 1);
+	treeview_post(treeview);
+
+	refresh();
+
+	int c;
+	while ((c = getch()) != KEY_F(1))
+	  {
+		  TREENODE *selected_node = treeview_current_node(treeview);
+
+		  switch (c)
+		    {
+		    case KEY_DOWN:
+			    treeview_driver(treeview, REQ_DOWN_ITEM);
+			    break;
+
+		    case KEY_RIGHT:
+			    {
+				    expand_callback(selected_node);
+
+				    treeview_set_tree(treeview, root);
+				    treeview_set_current(treeview, selected_node);
+				    break;
+			    }
+
+		    case KEY_LEFT:
+			    {
+				    tree_node_remove_childs(selected_node);
+
+				    treeview_set_tree(treeview, root);
+				    treeview_set_current(treeview, selected_node);
+			    }
+
+			    break;
+		    case KEY_UP:
+			    treeview_driver(treeview, REQ_UP_ITEM);
+			    break;
+		    }
+	  }
+
+	free(treeview);
 }
 
 int main(int argc, char *argv[])
@@ -97,7 +145,7 @@ int main(int argc, char *argv[])
 
 	ldap_load_subtree(root);
 
-	treeview_render(root, ldap_load_subtree);
+	render(root, ldap_load_subtree);
 
 	endwin();
 }
