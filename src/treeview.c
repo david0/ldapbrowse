@@ -70,9 +70,8 @@ void treeview_post(TREEVIEW * tv)
 void treeview_set_tree(TREEVIEW * tv, TREENODE * root)
 {
 	unpost_menu(tv);
-	ITEM **items = menu_items(tv);
+	free(menu_items(tv));
 	set_menu_items(tv, NULL);
-	free(items);
 
 	set_menu_items(tv, items_from_tree(root));
 	post_menu(tv);

@@ -9,6 +9,13 @@ TREENODE *tree_node_alloc()
 
 void tree_node_free(TREENODE * n)
 {
+	for (unsigned i = 0; n->children && n->children[i] != NULL; i++)
+	{
+		tree_node_free(n->children[i]);
+		n->children[i] = NULL;
+	}
+	free(n->value);
+	n->value = NULL;
 	free(n);
 }
 

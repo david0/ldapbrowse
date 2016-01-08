@@ -52,7 +52,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	BerElement *pber;
 	char *attr;
 	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
-	     attr = ldap_next_attribute(ld, msg, pber))
+	     ldap_memfree(attr), attr = ldap_next_attribute(ld, msg, pber))
 	{
 
 		char **values;
@@ -61,15 +61,18 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 			ldap_perror(ld, "ldap_get_values");
 		}
 
-    for(unsigned i=0; values[i]; i++) {
-      waddstr(win, attr);
-      waddstr(win, ":");
-      waddstr(win, values[i]);
-      waddstr(win, "\n");
-    }
+		for (unsigned i = 0; values[i]; i++)
+		{
+			waddstr(win, attr);
+			waddstr(win, ":");
+			waddstr(win, values[i]);
+			waddstr(win, "\n");
+		}
 	}
 
 	ber_free(pber, 0);
+	ldap_msgfree(msg);
+
 	wrefresh(win);
 }
 
@@ -90,7 +93,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	int c;
 	while ((c = getch()) != KEY_F(1))
 	{
-	  TREENODE *selected_node = treeview_current_node(treeview);
+		TREENODE *selected_node = treeview_current_node(treeview);
 
 		switch (c)
 		{
@@ -129,6 +132,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	}
 
 	free(treeview);
+
 }
 
 int main(int argc, char *argv[])

@@ -25,4 +25,3 @@ TREENODE *treeview_current_node(TREEVIEW * tv);
 void treeview_set_current(TREEVIEW * tv, TREENODE * node);
 
 void treeview_driver(TREEVIEW * tv, int c);
-
