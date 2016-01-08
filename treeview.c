@@ -13,16 +13,16 @@ ITEM **tree_item_dfs(TREENODE * node, ITEM ** items, int level)
 	char *new = NULL;
 
 	if (node->value)
-	  {
-		  unsigned indent = 2;
-		  new = malloc(level * indent + strlen(node->value) + 1);
-		  unsigned i;
-		  for (i = 0; i < level * indent; i++)
-			  new[i] = ' ';
-		  new[i] = '\0';
+	{
+		unsigned indent = 2;
+		new = malloc(level * indent + strlen(node->value) + 1);
+		unsigned i;
+		for (i = 0; i < level * indent; i++)
+			new[i] = ' ';
+		new[i] = '\0';
 
-		  strcat(new, node->value);
-	  }
+		strcat(new, node->value);
+	}
 
 	items[n - 2] = new_item(new, "");
 	set_item_userptr(items[n - 2], node);
@@ -48,10 +48,10 @@ TREEVIEW *treeview_init(TREENODE * root)
 ITEM *item_for_node(ITEM ** item, TREENODE * n)
 {
 	do
-	  {
-		  if (item_userptr(*item) == n)
-			  return *item;
-	  }
+	{
+		if (item_userptr(*item) == n)
+			return *item;
+	}
 	while (item++);
 
 	return NULL;

@@ -33,11 +33,11 @@ void ldap_load_subtree(TREENODE * root)
 
 	LDAPMessage *entry;
 	for (entry = ldap_first_entry(ld, msg); entry != NULL; entry = ldap_next_entry(ld, entry))
-	  {
-		  TREENODE *child = tree_node_alloc();
-		  child->value = ldap_get_dn(ld, entry);
-		  tree_node_append_child(root, child);
-	  }
+	{
+		TREENODE *child = tree_node_alloc();
+		child->value = ldap_get_dn(ld, entry);
+		tree_node_append_child(root, child);
+	}
 }
 
 void selection_changed(WINDOW * win, TREENODE * selection)
@@ -52,20 +52,20 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	char *attr;
 	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
 	     attr = ldap_next_attribute(ld, msg, pber))
-	  {
-		  waddstr(win, attr);
-		  waddstr(win, ": ");
+	{
+		waddstr(win, attr);
+		waddstr(win, ": ");
 
-		  char **values;
-		  if (!(values = ldap_get_values(ld, msg, attr)))
-		    {
-			    ldap_perror(ld, "ldap_get_values");
-		    }
+		char **values;
+		if (!(values = ldap_get_values(ld, msg, attr)))
+		{
+			ldap_perror(ld, "ldap_get_values");
+		}
 
-		  waddstr(win, values[0]);	//FIXME: multi-value
+		waddstr(win, values[0]);	//FIXME: multi-value
 
-		  waddstr(win, "\n\r");
-	  }
+		waddstr(win, "\n\r");
+	}
 	ber_free(pber, 0);
 	wrefresh(win);
 }
@@ -84,43 +84,43 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	int c;
 	while ((c = getch()) != KEY_F(1))
-	  {
-		  TREENODE *selected_node = treeview_current_node(treeview);
+	{
+		TREENODE *selected_node = treeview_current_node(treeview);
 
-		  switch (c)
-		    {
-		    case KEY_DOWN:
-			    treeview_driver(treeview, REQ_DOWN_ITEM);
-			    selection_changed(attrwin, selected_node);
-			    break;
+		switch (c)
+		{
+		case KEY_DOWN:
+			treeview_driver(treeview, REQ_DOWN_ITEM);
+			selection_changed(attrwin, selected_node);
+			break;
 
-		    case KEY_RIGHT:
-			    {
-				    expand_callback(selected_node);
+		case KEY_RIGHT:
+			{
+				expand_callback(selected_node);
 
-				    treeview_set_tree(treeview, root);
-				    treeview_set_current(treeview, selected_node);
-				    break;
-			    }
+				treeview_set_tree(treeview, root);
+				treeview_set_current(treeview, selected_node);
+				break;
+			}
 
-		    case KEY_LEFT:
-			    {
-				    tree_node_remove_childs(selected_node);
+		case KEY_LEFT:
+			{
+				tree_node_remove_childs(selected_node);
 
-				    treeview_set_tree(treeview, root);
-				    treeview_set_current(treeview, selected_node);
-			    }
+				treeview_set_tree(treeview, root);
+				treeview_set_current(treeview, selected_node);
+			}
 
-			    break;
-		    case KEY_UP:
-			    treeview_driver(treeview, REQ_UP_ITEM);
-			    selection_changed(attrwin, selected_node);
-			    break;
-		    }
+			break;
+		case KEY_UP:
+			treeview_driver(treeview, REQ_UP_ITEM);
+			selection_changed(attrwin, selected_node);
+			break;
+		}
 
-			mvhline(LINES / 2 + 1, 0, 0, COLS);
+		mvhline(LINES / 2 + 1, 0, 0, COLS);
 
-	  }
+	}
 
 	free(treeview);
 }
@@ -135,47 +135,47 @@ int main(int argc, char *argv[])
 	char *base;
 
 	if (argc < 4)
-	  {
-		  fprintf(stderr, "USAGE: %s [host] [binddn] [passwd]\n", argv[0]);
-		  return -1;
-	  }
+	{
+		fprintf(stderr, "USAGE: %s [host] [binddn] [passwd]\n", argv[0]);
+		return -1;
+	}
 
 	ldap_host = argv[1];
 	bind_dn = argv[2];
 	root_pw = argv[3];
 
 	if ((ld = ldap_init(ldap_host, 16611)) == NULL)
-	  {
-		  perror("ldap_init failed");
-		  exit(EXIT_FAILURE);
-	  }
+	{
+		perror("ldap_init failed");
+		exit(EXIT_FAILURE);
+	}
 
 	if (ldap_bind_s(ld, bind_dn, root_pw, LDAP_AUTH_SIMPLE) != LDAP_SUCCESS)
-	  {
-		  ldap_perror(ld, "ldap_bind");
-		  exit(EXIT_FAILURE);
-	  }
+	{
+		ldap_perror(ld, "ldap_bind");
+		exit(EXIT_FAILURE);
+	}
 
 	LDAPMessage *msg;
 	if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
-	  {
-		  ldap_perror(ld, "ldap_search_s");
-	  }
+	{
+		ldap_perror(ld, "ldap_search_s");
+	}
 
 	char **values;
 	if (!(values = ldap_get_values(ld, msg, "namingContexts")))
-	  {
-		  ldap_perror(ld, "ldap_get_values");
-	  }
+	{
+		ldap_perror(ld, "ldap_get_values");
+	}
 
 	base = values[0];
 	assert(base != NULL);
 
 	if (ldap_search_s(ld, base, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
 	    != LDAP_SUCCESS)
-	  {
-		  ldap_perror(ld, "ldap_search_s");
-	  }
+	{
+		ldap_perror(ld, "ldap_search_s");
+	}
 
 	TREENODE *root = tree_node_alloc();
 	root->value = strdup(base);
