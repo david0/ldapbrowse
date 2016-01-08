@@ -1,5 +1,5 @@
 CFLAGS=-g -Wall -DLDAP_DEPRECATED=1
-LDFLAGS=-lcurses -lldap -lmenu
+LDFLAGS=-lcurses -lldap -lmenu -llber
 OBJECTS=ldapbrowse.o tree.o treeview.o
 
 ldapbrowse: $(OBJECTS)
