@@ -54,8 +54,6 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
 	     attr = ldap_next_attribute(ld, msg, pber))
 	{
-		waddstr(win, attr);
-		waddstr(win, ": ");
 
 		char **values;
 		if (!(values = ldap_get_values(ld, msg, attr)))
@@ -63,10 +61,14 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 			ldap_perror(ld, "ldap_get_values");
 		}
 
-		waddstr(win, values[0]);	//FIXME: multi-value
-
-		waddstr(win, "\n\r");
+    for(unsigned i=0; values[i]; i++) {
+      waddstr(win, attr);
+      waddstr(win, ":");
+      waddstr(win, values[i]);
+      waddstr(win, "\n");
+    }
 	}
+
 	ber_free(pber, 0);
 	wrefresh(win);
 }
@@ -83,16 +85,23 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	mvhline(LINES / 2 + 1, 0, 0, COLS);
 
+	selection_changed(attrwin, root);
+
 	int c;
 	while ((c = getch()) != KEY_F(1))
 	{
-		TREENODE *selected_node = treeview_current_node(treeview);
+	  TREENODE *selected_node = treeview_current_node(treeview);
 
 		switch (c)
 		{
+		case KEY_UP:
+			treeview_driver(treeview, REQ_UP_ITEM);
+			selection_changed(attrwin, treeview_current_node(treeview));
+			break;
+
 		case KEY_DOWN:
 			treeview_driver(treeview, REQ_DOWN_ITEM);
-			selection_changed(attrwin, selected_node);
+			selection_changed(attrwin, treeview_current_node(treeview));
 			break;
 
 		case KEY_RIGHT:
@@ -111,12 +120,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				treeview_set_tree(treeview, root);
 				treeview_set_current(treeview, selected_node);
 			}
+			break;
 
-			break;
-		case KEY_UP:
-			treeview_driver(treeview, REQ_UP_ITEM);
-			selection_changed(attrwin, selected_node);
-			break;
 		}
 
 		mvhline(LINES / 2 + 1, 0, 0, COLS);
