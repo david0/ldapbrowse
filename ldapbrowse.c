@@ -48,11 +48,10 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	    != LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
 
-	LDAPMessage *entry;
-	BerValue *pber;
+	BerElement *pber;
 	char *attr;
 	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
-	     attr = ldap_next_attribute(ld, entry, pber))
+	     attr = ldap_next_attribute(ld, msg, pber))
 	  {
 		  waddstr(win, attr);
 		  waddstr(win, ": ");
