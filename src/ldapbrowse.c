@@ -64,7 +64,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		for (unsigned i = 0; values[i]; i++)
 		{
 			waddstr(win, attr);
-			waddstr(win, ":");
+			waddstr(win, ": ");
 			waddstr(win, values[i]);
 			waddstr(win, "\n");
 		}
@@ -92,7 +92,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	selection_changed(attrwin, root);
 
 	int c;
-	while ((c = getch()) != KEY_F(1))
+	while ((c = getch()) != 'q')
 	{
 		TREENODE *selected_node = treeview_current_node(treeview);
 
