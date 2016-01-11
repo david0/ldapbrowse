@@ -1,5 +1,11 @@
 language: C
 
+sudo: required
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -qq valgrind
+
 script:
-  - cd src && make
-  - cd test && make
+  - (cd src && make)
+  - (cd test && make RUNNER=)

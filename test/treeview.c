@@ -33,4 +33,5 @@ int main()
 {
 	test_create_set_tree_free();
 	test_create_add_free();
+  return 0;
 }

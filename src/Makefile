@@ -1,9 +1,9 @@
-CFLAGS=-g -Wall -DLDAP_DEPRECATED=1
-LDFLAGS=-lcurses -lldap -lmenu -llber
+CFLAGS=-g -Wall -DLDAP_DEPRECATED=1 -std=c99
+LDFLAGS=-lncurses -lldap -lmenu -llber
 OBJECTS=ldapbrowse.o tree.o treeview.o
 
 ldapbrowse: $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $* -o $@ $^
+	$(CC) $(CFLAGS) $* -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f ldapbrowse $(OBJECTS)

@@ -25,4 +25,5 @@ int main()
 {
 	test_add();
 	test_remove_childs();
+  return 0;
 }

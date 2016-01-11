@@ -1,18 +1,25 @@
 CFLAGS=-I../src -g
 LDFLAGS=-lmenu -lncurses
+RUNNER:=valgrind -q --leak-check=full --error-exitcode=255
 
 all: tests
 
 tests: treeTest treeviewTest
 .PHONY: tests
 
-treeview: ../src/tree.o ../src/treeview.o
+../src/%.o : ../src/%.c
+				$(MAKE) -C ../src 
+.PHONY: ../src/%.o
 
-tree: ../src/tree.o
+treeview: ../src/tree.o ../src/treeview.o treeview.o
+				$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+tree: ../src/tree.o tree.o
+				$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %Test: %
 				@printf  "Runnig %-50s" $<...
-				@valgrind --leak-check=full -q --error-exitcode=255 ./$<
+				@$(RUNNER) ./$<
 				@echo "OK"
 
 .PHONY: %Test
