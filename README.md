@@ -1,6 +1,8 @@
 # ldapbrowse 
 simple LDAP browser with text user interface
 
+[![Build Status](https://travis-ci.org/david0/ldapbrowse.png)](https://travis-ci.org/david0/ldapbrowse)
+
 # Usage
 
 The CLI is a subset of [ldapsearch](http://linux.die.net/man/1/ldapsearch):
