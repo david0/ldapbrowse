@@ -79,7 +79,8 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
 	WINDOW *attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
-	treeview = treeview_init(root);
+	treeview = treeview_init();
+	treeview_set_tree(treeview, root);
 
 	treeview_set_format(treeview, LINES / 2, 1);
 	treeview_post(treeview);
@@ -131,7 +132,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	}
 
-	free(treeview);
+	treeview_free(treeview);
+	treeview = NULL;
 
 }
 

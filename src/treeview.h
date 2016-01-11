@@ -5,7 +5,9 @@
 
 typedef MENU TREEVIEW;
 
-TREEVIEW *treeview_init(TREENODE * root);
+TREEVIEW *treeview_init();
+
+void treeview_free(TREEVIEW * root);
 
 void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols);
 

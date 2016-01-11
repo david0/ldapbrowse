@@ -37,12 +37,40 @@ ITEM **tree_item_dfs(TREENODE * node, ITEM ** items, int level)
 ITEM **items_from_tree(TREENODE * root)
 {
 	ITEM **i = calloc(1, sizeof(ITEM *));
-	return tree_item_dfs(root, i, 0);
+	i = tree_item_dfs(root, i, 0);
+
+	if (*i == NULL)
+	{			// this would be eaten anyway by menu_items
+		free(i);
+		i = NULL;
+	}
+
+	return i;
 }
 
-TREEVIEW *treeview_init(TREENODE * root)
+TREEVIEW *treeview_init()
 {
-	return new_menu((ITEM **) items_from_tree(root));
+	return new_menu(NULL);
+}
+
+void treeview_free_items(TREEVIEW * tv)
+{
+	unpost_menu(tv);
+	ITEM **items = menu_items(tv);
+	set_menu_items(tv, NULL);
+	for (unsigned i = 0; items && items[i]; i++)
+	{
+		free(item_name(items[i]));
+		if (free_item(items[i]))
+			fprintf(stderr, "free item failed\n");
+	}
+	free(items);
+}
+
+void treeview_free(TREEVIEW * tv)
+{
+	treeview_free_items(tv);
+	free_menu(tv);
 }
 
 ITEM *item_for_node(ITEM ** item, TREENODE * n)
@@ -69,10 +97,7 @@ void treeview_post(TREEVIEW * tv)
 
 void treeview_set_tree(TREEVIEW * tv, TREENODE * root)
 {
-	unpost_menu(tv);
-	free(menu_items(tv));
-	set_menu_items(tv, NULL);
-
+	treeview_free_items(tv);
 	set_menu_items(tv, items_from_tree(root));
 	post_menu(tv);
 

@@ -9,11 +9,7 @@ TREENODE *tree_node_alloc()
 
 void tree_node_free(TREENODE * n)
 {
-	for (unsigned i = 0; n->children && n->children[i] != NULL; i++)
-	{
-		tree_node_free(n->children[i]);
-		n->children[i] = NULL;
-	}
+	tree_node_remove_childs(n);
 	free(n->value);
 	n->value = NULL;
 	free(n);
@@ -35,11 +31,17 @@ void tree_node_append_child(TREENODE * root, TREENODE * child)
 	root->children[old_list_len] = NULL;
 }
 
-void tree_node_remove_childs(TREENODE * root)
+void tree_node_remove_childs(TREENODE * n)
 {
-	for (unsigned i = 0; root->children && root->children[i] != NULL; i++)
-		tree_node_free(root->children[i]);
+	for (unsigned i = 0; n->children && n->children[i] != NULL; i++)
+	{
+		tree_node_free(n->children[i]);
+		n->children[i] = NULL;
+	}
 
-	free(root->children);
-	root->children = NULL;
+	if (n->children)
+	{
+		free(n->children);
+		n->children = NULL;
+	}
 }
