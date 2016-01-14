@@ -87,7 +87,9 @@ ITEM *item_for_node(ITEM ** item, TREENODE * n)
 
 void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols)
 {
+	unpost_menu(tv);
 	set_menu_format(tv, rows, cols);
+	post_menu(tv);
 }
 
 void treeview_post(TREEVIEW * tv)
