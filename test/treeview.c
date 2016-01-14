@@ -31,7 +31,11 @@ void test_create_add_free()
 
 int main()
 {
+	initscr();		// needed because stdscr must be set with curses 5.9
+
 	test_create_set_tree_free();
 	test_create_add_free();
-  return 0;
+
+	endwin();
+	return 0;
 }

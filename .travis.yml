@@ -8,4 +8,4 @@ before_install:
 
 script:
   - (cd src && make)
-  - (cd test && make RUNNER=)
+  - (cd test && make)
