@@ -115,7 +115,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	refresh();
 
-	mvhline(LINES / 2 + 1, 0, 0, COLS);
+	mvhline(LINES / 2, 0, 0, COLS);
 
 	selection_changed(attrwin, root);
 
@@ -156,7 +156,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		}
 
-		mvhline(LINES / 2 + 1, 0, 0, COLS);
+		mvhline(LINES / 2, 0, 0, COLS);
 
 	}
 
