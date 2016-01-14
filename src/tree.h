@@ -2,6 +2,7 @@
 
 typedef struct TREENODE_S {
 	char *value;
+	struct TREENODE_S *parent;
 	struct TREENODE_S **children;
 } TREENODE;
 

@@ -23,12 +23,35 @@ void curses_init()
 	curs_set(0);
 }
 
+char *node_dn(TREENODE * node)
+{
+	char *dn = calloc(1, 1);
+	while (node)
+	{
+		unsigned len = strlen(dn) + strlen(node->value) + 1;
+		dn = realloc(dn, len);
+
+		strcat(dn, ",");
+		strcat(dn, node->value);
+
+		node = node->parent;
+	}
+
+	for (unsigned i = 0; dn[i]; i++)
+		dn[i] = dn[i + 1];
+
+	return dn;
+}
+
 void ldap_load_subtree(TREENODE * root)
 {
 	LDAPMessage *msg;
-	if (ldap_search_s(ld, root->value, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
-	    != LDAP_SUCCESS)
+	char *dn = node_dn(root);
+	if (ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
+
+	free(dn);
+	dn = NULL;
 
 	tree_node_remove_childs(root);
 
@@ -36,7 +59,9 @@ void ldap_load_subtree(TREENODE * root)
 	for (entry = ldap_first_entry(ld, msg); entry != NULL; entry = ldap_next_entry(ld, entry))
 	{
 		TREENODE *child = tree_node_alloc();
-		child->value = ldap_get_dn(ld, entry);
+		char *dn = ldap_get_dn(ld, entry);
+		char **dns = ldap_explode_dn(dn, 0);
+		child->value = dns[0];
 		tree_node_append_child(root, child);
 	}
 }
@@ -45,9 +70,12 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 {
 	werase(win);
 	LDAPMessage *msg;
-	if (ldap_search_s(ld, selection->value, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
-	    != LDAP_SUCCESS)
+	char *dn = node_dn(selection);
+	if (ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
+
+	free(dn);
+	dn = NULL;
 
 	BerElement *pber;
 	char *attr;

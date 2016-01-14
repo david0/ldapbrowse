@@ -11,6 +11,7 @@ void tree_node_free(TREENODE * n)
 {
 	tree_node_remove_childs(n);
 	free(n->value);
+	n->parent = NULL;
 	n->value = NULL;
 	free(n);
 }
@@ -26,6 +27,7 @@ unsigned tree_node_children_count(TREENODE * root)
 void tree_node_append_child(TREENODE * root, TREENODE * child)
 {
 	unsigned old_list_len = tree_node_children_count(root) + 1;
+	child->parent = root;
 	root->children = realloc(root->children, (old_list_len + 1) * sizeof(TREENODE *));
 	root->children[old_list_len - 1] = child;
 	root->children[old_list_len] = NULL;

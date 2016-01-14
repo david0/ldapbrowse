@@ -8,6 +8,8 @@ void test_add()
 
 	tree_node_append_child(root, child);
 
+	assert(root->parent == NULL);
+	assert(child->parent == root);
 	assert(tree_node_children_count(root) == 1);
 
 	tree_node_free(root);
@@ -25,5 +27,5 @@ int main()
 {
 	test_add();
 	test_remove_childs();
-  return 0;
+	return 0;
 }
