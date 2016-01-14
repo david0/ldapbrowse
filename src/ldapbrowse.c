@@ -28,7 +28,7 @@ char *node_dn(TREENODE * node)
 	char *dn = calloc(1, 1);
 	while (node)
 	{
-		unsigned len = strlen(dn) + strlen(node->value) + 1;
+		unsigned len = strlen(dn) + strlen(node->value) + 2;
 		dn = realloc(dn, len);
 
 		strcat(dn, ",");
@@ -108,8 +108,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
 	WINDOW *attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
 	treeview = treeview_init();
-	treeview_set_tree(treeview, root);
 
+	treeview_set_tree(treeview, root);
 	treeview_set_format(treeview, LINES / 2, 1);
 	treeview_post(treeview);
 
