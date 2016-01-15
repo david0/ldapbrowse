@@ -71,7 +71,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	werase(win);
 	LDAPMessage *msg;
 	char *dn = node_dn(selection);
-	if (ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
+	if (ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
 
 	free(dn);
