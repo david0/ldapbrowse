@@ -23,9 +23,26 @@ void test_remove_childs()
 	tree_node_free(root);
 }
 
+void test_get_parent()
+{
+	TREENODE *root = tree_node_alloc(),
+	    *child1 = tree_node_alloc(), *child11 = tree_node_alloc();
+
+	tree_node_append_child(root, child1);
+	tree_node_append_child(child1, child11);
+
+	/*assert(tree_node_get_parent(root, root) == NULL);
+	   assert(tree_node_get_parent(root, child1) == root);
+	 */
+	assert(tree_node_get_parent(root, child11) == child1);
+
+	tree_node_free(root);
+}
+
 int main()
 {
 	test_add();
 	test_remove_childs();
+	test_get_parent();
 	return 0;
 }

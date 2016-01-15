@@ -24,6 +24,19 @@ unsigned tree_node_children_count(TREENODE * root)
 	return i;
 }
 
+TREENODE* tree_node_get_parent(TREENODE* root, TREENODE *node) {
+	for (unsigned i = 0; root->children && root->children[i] != NULL; i++) {
+    if(root->children[i] == node)
+      return root;
+    else {
+      TREENODE * sub = tree_node_get_parent(root->children[i], node);
+      if(sub)
+        return sub;
+    }
+  }
+  return NULL;
+}
+
 void tree_node_append_child(TREENODE * root, TREENODE * child)
 {
 	unsigned old_list_len = tree_node_children_count(root) + 1;

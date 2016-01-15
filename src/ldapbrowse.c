@@ -71,7 +71,8 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	werase(win);
 	LDAPMessage *msg;
 	char *dn = node_dn(selection);
-	if (ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
+	if (ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg) !=
+	    LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
 
 	free(dn);
@@ -147,10 +148,16 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		case KEY_LEFT:
 			{
-				tree_node_remove_childs(selected_node);
+				if (tree_node_children_count(selected_node) == 0)
+					selected_node = tree_node_get_parent(root, selected_node);
 
-				treeview_set_tree(treeview, root);
-				treeview_set_current(treeview, selected_node);
+				if (selected_node)
+				{
+					tree_node_remove_childs(selected_node);
+
+					treeview_set_tree(treeview, root);
+					treeview_set_current(treeview, selected_node);
+				}
 			}
 			break;
 
