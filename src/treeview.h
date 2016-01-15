@@ -3,7 +3,10 @@
 #include <menu.h>
 #include "tree.h"
 
-typedef MENU TREEVIEW;
+typedef struct TREEVIEW {
+	MENU *menu;
+	unsigned width;
+} TREEVIEW;
 
 TREEVIEW *treeview_init();
 

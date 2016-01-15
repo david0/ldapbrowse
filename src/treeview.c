@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include "treeview.h"
 
@@ -22,11 +23,12 @@ ITEM **tree_item_dfs(TREENODE * node, ITEM ** items, int level)
 		new[i] = '\0';
 
 		strcat(new, node->value);
-	}
 
-	items[n - 2] = new_item(new, "");
-	set_item_userptr(items[n - 2], node);
-	items[n - 1] = NULL;
+		items[n - 2] = new_item(new, "");
+		assert(items[n - 2] != NULL);
+		set_item_userptr(items[n - 2], node);
+		items[n - 1] = NULL;
+	}
 
 	for (unsigned i = 0; node->children && node->children[i]; i++)
 		items = tree_item_dfs(node->children[i], items, level + 1);
@@ -50,14 +52,17 @@ ITEM **items_from_tree(TREENODE * root)
 
 TREEVIEW *treeview_init()
 {
-	return new_menu(NULL);
+	TREEVIEW *tv = calloc(1, sizeof(TREEVIEW));
+	tv->menu = new_menu(NULL);
+	set_menu_mark(tv->menu, NULL);
+	return tv;
 }
 
 void treeview_free_items(TREEVIEW * tv)
 {
-	unpost_menu(tv);
-	ITEM **items = menu_items(tv);
-	set_menu_items(tv, NULL);
+	unpost_menu(tv->menu);
+	ITEM **items = menu_items(tv->menu);
+	set_menu_items(tv->menu, NULL);
 	for (unsigned i = 0; items && items[i]; i++)
 	{
 		free(item_name(items[i]));
@@ -70,7 +75,8 @@ void treeview_free_items(TREEVIEW * tv)
 void treeview_free(TREEVIEW * tv)
 {
 	treeview_free_items(tv);
-	free_menu(tv);
+	free_menu(tv->menu);
+	free(tv);
 }
 
 ITEM *item_for_node(ITEM ** item, TREENODE * n)
@@ -87,35 +93,39 @@ ITEM *item_for_node(ITEM ** item, TREENODE * n)
 
 void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols)
 {
-	unpost_menu(tv);
-	set_menu_format(tv, rows, cols);
-	post_menu(tv);
+	unpost_menu(tv->menu);
+	set_menu_format(tv->menu, rows, 1);
+	tv->width = cols;
+	treeview_post(tv);
 }
 
 void treeview_post(TREEVIEW * tv)
 {
-	post_menu(tv);
+	tv->menu->namelen = tv->width;
+	tv->menu->width = tv->width;
+	tv->menu->itemlen = tv->width;
+	post_menu(tv->menu);
 }
 
 void treeview_set_tree(TREEVIEW * tv, TREENODE * root)
 {
 	treeview_free_items(tv);
-	set_menu_items(tv, items_from_tree(root));
-	post_menu(tv);
-
+	int rc = set_menu_items(tv->menu, items_from_tree(root));
+	assert(rc == E_OK);
+	treeview_post(tv);
 }
 
 TREENODE *treeview_current_node(TREEVIEW * tv)
 {
-	return item_userptr(current_item(tv));
+	return item_userptr(current_item(tv->menu));
 }
 
 void treeview_set_current(TREEVIEW * tv, TREENODE * node)
 {
-	set_current_item(tv, item_for_node(menu_items(tv), node));
+	set_current_item(tv->menu, item_for_node(menu_items(tv->menu), node));
 }
 
 void treeview_driver(TREEVIEW * tv, int c)
 {
-	menu_driver(tv, c);
+	menu_driver(tv->menu, c);
 }

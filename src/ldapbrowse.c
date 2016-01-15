@@ -110,7 +110,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	treeview = treeview_init();
 
 	treeview_set_tree(treeview, root);
-	treeview_set_format(treeview, LINES / 2, 1);
+	treeview_set_format(treeview, LINES / 2, COLS);
 	treeview_post(treeview);
 
 	refresh();
