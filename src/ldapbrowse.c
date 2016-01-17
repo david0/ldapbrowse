@@ -61,9 +61,12 @@ void ldap_load_subtree(TREENODE * root)
 		TREENODE *child = tree_node_alloc();
 		char *dn = ldap_get_dn(ld, entry);
 		char **dns = ldap_explode_dn(dn, 0);
-		child->value = dns[0];
+		child->value = strdup(dns[0]);
 		tree_node_append_child(root, child);
+		ldap_value_free(dns);
 	}
+
+	ldap_msgfree(msg);
 }
 
 void selection_changed(WINDOW * win, TREENODE * selection)
@@ -97,6 +100,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 			waddstr(win, values[i]);
 			waddstr(win, "\n");
 		}
+		ldap_value_free(values);
 	}
 
 	ber_free(pber, 0);
@@ -255,18 +259,15 @@ int main(int argc, char *argv[])
 
 		if (values)
 			base = values[0];
+
+		ldap_msgfree(msg);
+		msg = NULL;
 	}
 
 	if (!base)
 	{
 		printf("no baseDn given and server does not support namingContexts\n");
 		exit(EXIT_FAILURE);
-	}
-
-	if (ldap_search_s(ld, base, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
-	    != LDAP_SUCCESS)
-	{
-		ldap_perror(ld, "ldap_search_s");
 	}
 
 	TREENODE *root = tree_node_alloc();
