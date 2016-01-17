@@ -1,4 +1,4 @@
-CFLAGS=-g -Wall -DLDAP_DEPRECATED=1 -std=c99
+CFLAGS=-g -Wall -std=c99 -D_BSD_SOURCE -DLDAP_DEPRECATED=1
 LDFLAGS=-lncurses -lldap -lmenu -llber
 OBJECTS=ldapbrowse.o tree.o treeview.o
 

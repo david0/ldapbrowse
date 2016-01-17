@@ -182,7 +182,6 @@ int main(int argc, char *argv[])
 
 	while (true)
 	{
-		int option_index = 0;
 		char c = getopt(argc, argv, "h:p:w:D:b:");
 
 		if (c == -1)	// check for end of options
@@ -230,7 +229,7 @@ int main(int argc, char *argv[])
 	}
 
 	int msgid = 0;
-	if (ldap_sasl_bind_s(ld, bind_dn, LDAP_SASL_SIMPLE, &passwd, NULL, NULL, &msgid) !=
+	if (ldap_sasl_bind(ld, bind_dn, LDAP_SASL_SIMPLE, &passwd, NULL, NULL, &msgid) !=
 	    LDAP_SUCCESS)
 	{
 		ldap_perror(ld, "ldap_bind");
