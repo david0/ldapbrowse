@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((ld = ldap_init(ldap_host, 16611)) == NULL)
+	if ((ld = ldap_init(ldap_host, port)) == NULL)
 	{
 		perror("ldap_init failed");
 		exit(EXIT_FAILURE);
