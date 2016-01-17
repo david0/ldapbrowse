@@ -175,8 +175,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 int main(int argc, char *argv[])
 {
 	char *ldap_host = "127.0.0.1";
-	char *bind_dn = "";
-	char *password = "";
+	char *bind_dn = NULL;
+	struct berval passwd = { 0, NULL };
 	char *base = NULL;
 	unsigned port = 389;
 
@@ -199,7 +199,8 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'w':
-			password = optarg;
+			passwd.bv_val = optarg;
+			passwd.bv_len = strlen(optarg);
 			break;
 
 		case 'D':
@@ -221,7 +222,16 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (ldap_bind_s(ld, bind_dn, password, LDAP_AUTH_SIMPLE) != LDAP_SUCCESS)
+	int version = LDAP_VERSION3;
+	if (ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version) != LDAP_OPT_SUCCESS)
+	{
+		ldap_perror(ld, "ldap_set_option");
+		exit(EXIT_FAILURE);
+	}
+
+	int msgid = 0;
+	if (ldap_sasl_bind_s(ld, bind_dn, LDAP_SASL_SIMPLE, &passwd, NULL, NULL, &msgid) !=
+	    LDAP_SUCCESS)
 	{
 		ldap_perror(ld, "ldap_bind");
 		exit(EXIT_FAILURE);
