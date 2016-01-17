@@ -254,11 +254,15 @@ int main(int argc, char *argv[])
 			ldap_perror(ld, "ldap_get_values");
 		}
 
-		base = values[0];
+		if (values)
+			base = values[0];
 	}
 
 	if (!base)
-		printf("no baseDn given and server does not supportt namingContexts\n");
+	{
+		printf("no baseDn given and server does not support namingContexts\n");
+		exit(EXIT_FAILURE);
+	}
 
 	if (ldap_search_s(ld, base, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg)
 	    != LDAP_SUCCESS)
