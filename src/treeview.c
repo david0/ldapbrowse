@@ -120,9 +120,29 @@ TREENODE *treeview_current_node(TREEVIEW * tv)
 	return item_userptr(current_item(tv->menu));
 }
 
+int max(int a, int b)
+{
+	return a > b ? a : b; 
+}
+
+int min(int a, int b)
+{
+	return a < b ? a : b; 
+}
+
+void set_top_row_safe(TREEVIEW * tv, unsigned row)
+{
+	int max_toprow = max(item_count(tv->menu) - tv->menu->arows, 0);
+	int rc = set_top_row(tv->menu, min(row, max_toprow));
+	assert(rc == E_OK);
+}
+
 void treeview_set_current(TREEVIEW * tv, TREENODE * node)
 {
-	set_current_item(tv->menu, item_for_node(menu_items(tv->menu), node));
+	int rc = set_current_item(tv->menu, item_for_node(menu_items(tv->menu), node));
+	assert(rc == E_OK);
+
+	set_top_row_safe(tv, top_row(tv->menu));
 }
 
 void treeview_driver(TREEVIEW * tv, int c)
