@@ -141,6 +141,16 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			selection_changed(attrwin, treeview_current_node(treeview));
 			break;
 
+		case KEY_PPAGE:
+			treeview_driver(treeview, REQ_SCR_UPAGE);
+			selection_changed(attrwin, treeview_current_node(treeview));
+			break;
+
+		case KEY_NPAGE:
+			treeview_driver(treeview, REQ_SCR_DPAGE);
+			selection_changed(attrwin, treeview_current_node(treeview));
+			break;
+
 		case KEY_RIGHT:
 			{
 				expand_callback(selected_node);
