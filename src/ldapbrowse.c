@@ -78,6 +78,10 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	    LDAP_SUCCESS)
 		ldap_perror(ld, "ldap_search_s");
 
+	waddstr(win, "dn: ");
+	waddstr(win, dn);
+	waddstr(win, "\n");
+
 	free(dn);
 	dn = NULL;
 
@@ -86,7 +90,6 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	for (attr = ldap_first_attribute(ld, msg, &pber); attr != NULL;
 	     ldap_memfree(attr), attr = ldap_next_attribute(ld, msg, pber))
 	{
-
 		char **values;
 		if (!(values = ldap_get_values(ld, msg, attr)))
 		{
