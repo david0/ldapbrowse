@@ -177,7 +177,6 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				}
 			}
 			break;
-
 		}
 
 		mvhline(LINES / 2, 0, 0, COLS);
@@ -196,16 +195,21 @@ int main(int argc, char *argv[])
 	struct berval passwd = { 0, NULL };
 	char *base = NULL;
 	unsigned port = 389;
+	char *ldap_uri = NULL;
 
 	while (true)
 	{
-		char c = getopt(argc, argv, "h:p:w:D:b:");
+		char c = getopt(argc, argv, "H:h:p:w:D:b:");
 
 		if (c == -1)	// check for end of options
 			break;
 
 		switch (c)
 		{
+		case 'H':
+			ldap_uri = optarg;
+			break;
+
 		case 'h':
 			ldap_host = optarg;
 			break;
@@ -232,9 +236,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if ((ld = ldap_init(ldap_host, port)) == NULL)
+	if (ldap_uri == NULL)
 	{
-		perror("ldap_init failed");
+		asprintf(&ldap_uri, "ldap://%s:%d", ldap_host, port);
+	}
+
+	if (ldap_initialize(&ld, ldap_uri) != LDAP_SUCCESS)
+	{
+		perror("ldap_initialize failed");
 		exit(EXIT_FAILURE);
 	}
 

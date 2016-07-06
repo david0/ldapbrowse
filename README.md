@@ -9,7 +9,7 @@ simple LDAP browser with text user interface
 
 The CLI is a subset of [ldapsearch](http://linux.die.net/man/1/ldapsearch):
 
-      ldapbrowse  [-D binddn] [-w passwd] [-h ldaphost]  [-p ldapport]  [-b searchbase]  
+      ldapsearch [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost]  [-p ldapport]  [-b searchbase]  
 
 ## Compiling 
 
