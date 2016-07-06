@@ -69,6 +69,29 @@ void ldap_load_subtree(TREENODE * root)
 	ldap_msgfree(msg);
 }
 
+TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
+{
+	LDAPMessage *msg;
+	char *dn = node_dn(selected_node);
+	if (ldap_delete_s(ld, dn) != LDAP_SUCCESS)
+		ldap_perror(ld, "ldap_delete_s");
+
+	free(dn);
+	dn = NULL;
+
+	TREENODE *parent = tree_node_get_parent(root, selected_node);
+	if (parent)
+	{
+		// reload
+		tree_node_remove_childs(parent);
+		ldap_load_subtree(parent);
+		treeview_set_tree(treeview, root);
+		treeview_set_current(treeview, parent);
+	}
+
+	return parent;
+}
+
 void selection_changed(WINDOW * win, TREENODE * selection)
 {
 	werase(win);
@@ -177,6 +200,19 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				}
 			}
 			break;
+
+		case 'D':
+			{
+				werase(attrwin);
+				waddstr(attrwin, "do you really want to delete?");
+				wrefresh(attrwin);
+				if (getch() == 'y')
+					selected_node = ldap_delete_subtree(root, selected_node);
+
+				selection_changed(attrwin, selected_node);
+			}
+			break;
+
 		}
 
 		mvhline(LINES / 2, 0, 0, COLS);
