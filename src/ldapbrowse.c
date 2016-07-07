@@ -12,6 +12,7 @@
 
 LDAP *ld;
 TREEVIEW *treeview;
+WINDOW *attrwin;
 
 void curses_init()
 {
@@ -43,12 +44,26 @@ char *node_dn(TREENODE * node)
 	return dn;
 }
 
+void ldap_show_error(LDAP * ld, int errno, const char *s)
+{
+	char *errstr = ldap_err2string(errno);
+	werase(attrwin);
+	waddstr(attrwin, s);
+	waddstr(attrwin, ": ");
+	waddstr(attrwin, errstr);
+	wrefresh(attrwin);
+}
+
 void ldap_load_subtree(TREENODE * root)
 {
 	LDAPMessage *msg;
 	char *dn = node_dn(root);
-	if (ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) != LDAP_SUCCESS)
-		ldap_perror(ld, "ldap_search_s");
+	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg);
+	if (errno != LDAP_SUCCESS)
+	{
+		ldap_show_error(ld, errno, "ldap_search_s");
+		return;
+	}
 
 	free(dn);
 	dn = NULL;
@@ -69,37 +84,17 @@ void ldap_load_subtree(TREENODE * root)
 	ldap_msgfree(msg);
 }
 
-TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
-{
-	LDAPMessage *msg;
-	char *dn = node_dn(selected_node);
-	if (ldap_delete_s(ld, dn) != LDAP_SUCCESS)
-		ldap_perror(ld, "ldap_delete_s");
-
-	free(dn);
-	dn = NULL;
-
-	TREENODE *parent = tree_node_get_parent(root, selected_node);
-	if (parent)
-	{
-		// reload
-		tree_node_remove_childs(parent);
-		ldap_load_subtree(parent);
-		treeview_set_tree(treeview, root);
-		treeview_set_current(treeview, parent);
-	}
-
-	return parent;
-}
-
 void selection_changed(WINDOW * win, TREENODE * selection)
 {
 	werase(win);
 	LDAPMessage *msg;
 	char *dn = node_dn(selection);
-	if (ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg) !=
-	    LDAP_SUCCESS)
-		ldap_perror(ld, "ldap_search_s");
+	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg);
+	if (errno != LDAP_SUCCESS)
+	{
+		ldap_show_error(ld, errno, "ldap_search_s");
+		return;
+	}
 
 	waddstr(win, "dn: ");
 	waddstr(win, dn);
@@ -135,9 +130,38 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	wrefresh(win);
 }
 
+TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
+{
+	LDAPMessage *msg;
+	char *dn = node_dn(selected_node);
+	int errno = ldap_delete_s(ld, dn);
+	free(dn);
+	dn = NULL;
+
+	if (errno != LDAP_SUCCESS)
+	{
+		ldap_show_error(ld, errno, "ldap_delete_s");
+		return NULL;
+	}
+
+	TREENODE *parent = tree_node_get_parent(root, selected_node);
+	if (parent)
+	{
+		// reload
+		tree_node_remove_childs(parent);
+		ldap_load_subtree(parent);
+		treeview_set_tree(treeview, root);
+		treeview_set_current(treeview, parent);
+
+		selection_changed(attrwin, parent);
+	}
+
+	return parent;
+}
+
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
-	WINDOW *attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
+	attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
 	treeview = treeview_init();
 
 	treeview_set_tree(treeview, root);
@@ -209,7 +233,6 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				if (getch() == 'y')
 					selected_node = ldap_delete_subtree(root, selected_node);
 
-				selection_changed(attrwin, selected_node);
 			}
 			break;
 
@@ -279,7 +302,7 @@ int main(int argc, char *argv[])
 
 	if (ldap_initialize(&ld, ldap_uri) != LDAP_SUCCESS)
 	{
-		perror("ldap_initialize failed");
+		ldap_perror(ld, "ldap_initialize failed");
 		exit(EXIT_FAILURE);
 	}
 
@@ -306,7 +329,7 @@ int main(int argc, char *argv[])
 		if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) !=
 		    LDAP_SUCCESS)
 		{
-			ldap_perror(ld, "ldap_search_s");
+			ldap_perror(ld, "ldap_get_values");
 			exit(EXIT_FAILURE);
 		}
 
