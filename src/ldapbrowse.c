@@ -162,18 +162,20 @@ TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
 
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
-	attrwin = newwin(LINES / 2 - 1, COLS, LINES / 2 + 1, 0);
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	attrwin = newwin(height / 2 - 1, width, height / 2 + 1, 0);
 	treeview = treeview_init();
 
 	treeview_set_tree(treeview, root);
-	treeview_set_format(treeview, LINES / 2, COLS);
+	treeview_set_format(treeview, height / 2, width);
 	treeview_post(treeview);
 
 	refresh();
 
-	mvhline(LINES / 2, 0, 0, COLS);
+	mvhline(height / 2, 0, 0, width);
 
-	selection_changed(attrwin, root);
+	selection_changed(attrwin, treeview_current_node(treeview));
 
 	int c;
 	while ((c = getch()) != 'q')
@@ -182,6 +184,16 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		switch (c)
 		{
+		case KEY_RESIZE:
+			getmaxyx(stdscr, height, width);
+
+			treeview_set_format(treeview, height / 2, width);
+			treeview_set_current(treeview, selected_node);
+
+			wresize(attrwin, height / 2 - 1, width);
+			mvwin(attrwin, height / 2 + 1, 0);
+
+			break;
 		case KEY_UP:
 			treeview_driver(treeview, REQ_UP_ITEM);
 			selection_changed(attrwin, treeview_current_node(treeview));
@@ -239,7 +251,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		}
 
-		mvhline(LINES / 2, 0, 0, COLS);
+		mvhline(height / 2, 0, 0, width);
 
 	}
 
