@@ -13,6 +13,7 @@
 LDAP *ld;
 TREEVIEW *treeview;
 WINDOW *attrwin;
+char **attributes;
 
 void curses_init()
 {
@@ -89,7 +90,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	werase(win);
 	LDAPMessage *msg;
 	char *dn = node_dn(selection);
-	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg);
+	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", attributes, 0, &msg);
 	if (errno != LDAP_SUCCESS)
 	{
 		ldap_show_error(ld, errno, "ldap_search_s");
@@ -293,6 +294,11 @@ int main(int argc, char *argv[])
 		default:
 			exit(-1);
 		}
+	}
+
+	if ((argc - optind) > 0)
+	{
+		attributes = argv + optind;
 	}
 
 	if (ldap_uri == NULL)
