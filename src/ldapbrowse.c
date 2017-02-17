@@ -248,7 +248,12 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 			}
 			break;
-
+  
+    case 's':
+      {
+				ldif_write(ld, "out.ldif", node_dn(selected_node), attributes);
+      }
+      break;
 		}
 
 		mvhline(height / 2, 0, 0, width);

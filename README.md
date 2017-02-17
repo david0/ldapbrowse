@@ -22,7 +22,12 @@ The CLI is a subset of [ldapsearch](http://linux.die.net/man/1/ldapsearch):
 - libldap
 - getopt
 
+## key bindings
+
+`D`: delete selected node 
+`s`: save as LDIF
+
 
 ## Wishlist
 
-- editing capabilities (add, delete, edit)
+- editing capabilities (add, edit)
