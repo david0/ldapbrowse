@@ -7,8 +7,11 @@
 
 #include <curses.h>
 #include <menu.h>
+#include <form.h>
 #include "tree.h"
 #include "treeview.h"
+
+#define KEY_ENTER_MAC 0x0a
 
 LDAP *ld;
 TREEVIEW *treeview;
@@ -131,6 +134,86 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	wrefresh(win);
 }
 
+static char *trim_whitespaces(char *str)
+{
+	// trim leading space
+	while (isspace(*str))
+		str++;
+
+	if (*str == 0)		// all spaces?
+		return str;
+
+	// trim trailing space
+	char *end = str + strnlen(str, 128) - 1;
+
+	while (end > str && isspace(*end))
+		end--;
+
+	// write new null terminator
+	*(end + 1) = '\0';
+
+	return str;
+}
+
+TREENODE *ldap_save_subtree(TREENODE * selected_node)
+{
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	int winheight = 10, winwidth = width - 10;
+	WINDOW *dlg = newwin(winheight, winwidth, (height - winheight) / 2, 2);
+	box(dlg, 0, 0);
+
+	FIELD *fields[] = {
+		new_field(1, winwidth - 5, 3, 2, 0, 0),
+		NULL
+	};
+
+	char *nameSuggestion = NULL;
+	asprintf(&nameSuggestion, "out.ldif");
+	set_field_buffer(fields[0], 0, nameSuggestion);
+
+	FORM *form = new_form(fields);
+	set_form_win(form, dlg);
+	set_form_sub(form, derwin(dlg, winheight - 2, winwidth - 2, 1, 1));
+	post_form(form);
+
+	mvwaddstr(dlg, 1, 2, "Save as:");
+	wrefresh(dlg);
+
+	for (char ch = getch(); (ch != KEY_ENTER) && (ch != KEY_ENTER_MAC); ch = getch())
+	{
+		switch (ch)
+		{
+
+			// Delete the char before cursor
+		case KEY_BACKSPACE:
+		case 127:
+			form_driver(form, REQ_DEL_PREV);
+			break;
+
+			// Delete the char under the cursor
+		case KEY_DC:
+			form_driver(form, REQ_DEL_CHAR);
+			break;
+
+		default:
+			form_driver(form, ch);
+			break;
+		}
+
+		wrefresh(dlg);
+	}
+	form_driver(form, REQ_NEXT_FIELD);
+
+	char *filename = trim_whitespaces(field_buffer(fields[0], 0));
+	ldif_write(ld, filename, node_dn(selected_node), attributes);
+
+	free(nameSuggestion);
+	nameSuggestion = NULL;
+	free_form(form);
+	free_field(fields[0]);
+}
+
 TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
 {
 	LDAPMessage *msg;
@@ -251,7 +334,11 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		case 's':
 			{
-				ldif_write(ld, "out.ldif", node_dn(selected_node), attributes);
+				ldap_save_subtree(selected_node);
+
+				treeview_set_format(treeview, height / 2, width);
+				treeview_set_current(treeview, selected_node);
+				wrefresh(attrwin);
 			}
 			break;
 		}
