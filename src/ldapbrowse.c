@@ -248,12 +248,12 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 			}
 			break;
-  
-    case 's':
-      {
+
+		case 's':
+			{
 				ldif_write(ld, "out.ldif", node_dn(selected_node), attributes);
-      }
-      break;
+			}
+			break;
 		}
 
 		mvhline(height / 2, 0, 0, width);
@@ -273,10 +273,11 @@ int main(int argc, char *argv[])
 	char *base = NULL;
 	unsigned port = 389;
 	char *ldap_uri = NULL;
+	int deref = LDAP_DEREF_NEVER;
 
 	while (true)
 	{
-		char c = getopt(argc, argv, "H:h:p:w:D:b:");
+		char c = getopt(argc, argv, "H:h:p:w:D:b:a:");
 
 		if (c == -1)	// check for end of options
 			break;
@@ -308,6 +309,30 @@ int main(int argc, char *argv[])
 			base = optarg;
 			break;
 
+		case 'a':
+			if (strcasecmp("never", optarg) == 0)
+			{
+				deref = LDAP_DEREF_NEVER;
+			} else if (strcasecmp("never", optarg) == 0)
+			{
+				deref = LDAP_DEREF_NEVER;
+			} else if (strcasecmp("always", optarg) == 0)
+			{
+				deref = LDAP_DEREF_ALWAYS;
+			} else if (strcasecmp("find", optarg) == 0)
+			{
+				deref = LDAP_DEREF_FINDING;
+			} else if (strcasecmp("search", optarg) == 0)
+			{
+				deref = LDAP_DEREF_SEARCHING;
+			} else
+			{
+				fprintf(stderr, "%s is not a valid value for option a\n", optarg);
+				exit(-1);
+			}
+
+			break;
+
 		default:
 			exit(-1);
 		}
@@ -331,6 +356,12 @@ int main(int argc, char *argv[])
 
 	int version = LDAP_VERSION3;
 	if (ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &version) != LDAP_OPT_SUCCESS)
+	{
+		ldap_perror(ld, "ldap_set_option");
+		exit(EXIT_FAILURE);
+	}
+
+	if (ldap_set_option(ld, LDAP_OPT_DEREF, &deref) != LDAP_OPT_SUCCESS)
 	{
 		ldap_perror(ld, "ldap_set_option");
 		exit(EXIT_FAILURE);
