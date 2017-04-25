@@ -381,9 +381,6 @@ int main(int argc, char *argv[])
 			if (strcasecmp("never", optarg) == 0)
 			{
 				deref = LDAP_DEREF_NEVER;
-			} else if (strcasecmp("never", optarg) == 0)
-			{
-				deref = LDAP_DEREF_NEVER;
 			} else if (strcasecmp("always", optarg) == 0)
 			{
 				deref = LDAP_DEREF_ALWAYS;
