@@ -10,6 +10,7 @@
 #include <form.h>
 #include "tree.h"
 #include "treeview.h"
+#include "stringutils.h"
 
 #define KEY_ENTER_MAC 0x0a
 
@@ -134,27 +135,6 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	wrefresh(win);
 }
 
-static char *trim_whitespaces(char *str)
-{
-	// trim leading space
-	while (isspace(*str))
-		str++;
-
-	if (*str == 0)		// all spaces?
-		return str;
-
-	// trim trailing space
-	char *end = str + strnlen(str, 128) - 1;
-
-	while (end > str && isspace(*end))
-		end--;
-
-	// write new null terminator
-	*(end + 1) = '\0';
-
-	return str;
-}
-
 TREENODE *ldap_save_subtree(TREENODE * selected_node)
 {
 	int height, width;
@@ -169,7 +149,8 @@ TREENODE *ldap_save_subtree(TREENODE * selected_node)
 	};
 
 	char *nameSuggestion = NULL;
-	asprintf(&nameSuggestion, "out.ldif");
+	asprintf(&nameSuggestion, "%s.ldif",
+		 string_after_last(string_before(node_dn(selected_node), ','), '='));
 	set_field_buffer(fields[0], 0, nameSuggestion);
 
 	FORM *form = new_form(fields);
