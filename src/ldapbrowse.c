@@ -13,6 +13,7 @@
 #include "stringutils.h"
 
 #define KEY_ENTER_MAC 0x0a
+#define KEY_ESC 0x1b
 
 LDAP *ld;
 TREEVIEW *treeview;
@@ -21,6 +22,7 @@ char **attributes;
 
 void curses_init()
 {
+	setenv("ESCDELAY", "0", 0);
 	initscr();
 	clear();
 	noecho();
@@ -161,11 +163,11 @@ TREENODE *ldap_save_subtree(TREENODE * selected_node)
 	mvwaddstr(dlg, 1, 2, "Save as:");
 	wrefresh(dlg);
 
-	for (char ch = getch(); (ch != KEY_ENTER) && (ch != KEY_ENTER_MAC); ch = getch())
+	char ch;
+	while (ch = getch(), (ch != KEY_ENTER) && (ch != KEY_ENTER_MAC) && (ch != KEY_ESC))
 	{
 		switch (ch)
 		{
-
 			// Delete the char before cursor
 		case KEY_BACKSPACE:
 		case 127:
@@ -186,8 +188,14 @@ TREENODE *ldap_save_subtree(TREENODE * selected_node)
 	}
 	form_driver(form, REQ_NEXT_FIELD);
 
-	char *filename = trim_whitespaces(field_buffer(fields[0], 0));
-	ldif_write(ld, filename, node_dn(selected_node), attributes);
+	bool canceled = (ch == KEY_ESC);
+	if (!canceled)
+	{
+		char *filename = trim_whitespaces(field_buffer(fields[0], 0));
+		ldif_write(ld, filename, node_dn(selected_node), attributes);
+		free(filename);
+		filename = NULL;
+	}
 
 	free(nameSuggestion);
 	nameSuggestion = NULL;
