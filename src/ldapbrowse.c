@@ -6,8 +6,8 @@
 #include <getopt.h>
 
 #include <curses.h>
-#include <menu.h>
 #include <form.h>
+#include <menu.h>
 #include "tree.h"
 #include "treeview.h"
 #include "stringutils.h"
@@ -137,7 +137,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	wrefresh(win);
 }
 
-TREENODE *ldap_save_subtree(TREENODE * selected_node)
+void ldap_save_subtree(TREENODE * selected_node)
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
@@ -201,11 +201,11 @@ TREENODE *ldap_save_subtree(TREENODE * selected_node)
 	nameSuggestion = NULL;
 	free_form(form);
 	free_field(fields[0]);
+
 }
 
 TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
 {
-	LDAPMessage *msg;
 	char *dn = node_dn(selected_node);
 	int errno = ldap_delete_s(ld, dn);
 	free(dn);
@@ -237,13 +237,12 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 	int height, width;
 	getmaxyx(stdscr, height, width);
 	attrwin = newwin(height / 2 - 1, width, height / 2 + 1, 0);
-	treeview = treeview_init();
+	treeview = treeview_init(height / 2, width);
 
 	treeview_set_tree(treeview, root);
-	treeview_set_format(treeview, height / 2, width);
-	treeview_post(treeview);
 
 	refresh();
+	treeview_driver(treeview, 0);
 
 	mvhline(height / 2, 0, 0, width);
 
@@ -289,9 +288,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 		case KEY_RIGHT:
 			{
 				expand_callback(selected_node);
-
-				treeview_set_tree(treeview, root);
-				treeview_set_current(treeview, selected_node);
+				treeview_driver(treeview, 0);
 				break;
 			}
 
@@ -325,9 +322,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			{
 				ldap_save_subtree(selected_node);
 
-				treeview_set_format(treeview, height / 2, width);
-				treeview_set_current(treeview, selected_node);
-				wrefresh(attrwin);
+				treeview_driver(treeview, 0);
+				selection_changed(attrwin, treeview_current_node(treeview));
 			}
 			break;
 		}

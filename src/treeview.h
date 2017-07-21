@@ -1,11 +1,15 @@
 #pragma once
 
-#include <menu.h>
+#include <curses.h>
 #include "tree.h"
 
 typedef struct TREEVIEW {
-	MENU *menu;
+	TREENODE *root;
+	WINDOW *win;
+	unsigned currentItemIndex;
 	unsigned width;
+	unsigned height;
+	unsigned toprow;
 } TREEVIEW;
 
 TREEVIEW *treeview_init();
@@ -13,8 +17,6 @@ TREEVIEW *treeview_init();
 void treeview_free(TREEVIEW * root);
 
 void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols);
-
-void treeview_post(TREEVIEW * tv);
 
 /**
  * Rebuilds the whole tree with root as new tree root.
