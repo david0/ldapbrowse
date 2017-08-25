@@ -155,6 +155,8 @@ void ldap_save_subtree(TREENODE * selected_node)
 		 string_after_last(string_before(node_dn(selected_node), ','), '='));
 	set_field_buffer(fields[0], 0, nameSuggestion);
 
+	curs_set(1);
+
 	FORM *form = new_form(fields);
 	set_form_win(form, dlg);
 	set_form_sub(form, derwin(dlg, winheight - 2, winwidth - 2, 1, 1));
@@ -168,14 +170,25 @@ void ldap_save_subtree(TREENODE * selected_node)
 	{
 		switch (ch)
 		{
+		case KEY_LEFT:
+		case 4:
+			form_driver(form, REQ_PREV_CHAR);
+			break;
+
+		case KEY_RIGHT:
+		case 5:
+			form_driver(form, REQ_NEXT_CHAR);
+			break;
 			// Delete the char before cursor
 		case KEY_BACKSPACE:
 		case 127:
+		case 7:
 			form_driver(form, REQ_DEL_PREV);
 			break;
 
 			// Delete the char under the cursor
 		case KEY_DC:
+		case 74:
 			form_driver(form, REQ_DEL_CHAR);
 			break;
 
@@ -196,6 +209,8 @@ void ldap_save_subtree(TREENODE * selected_node)
 		free(filename);
 		filename = NULL;
 	}
+
+	curs_set(0);
 
 	free(nameSuggestion);
 	nameSuggestion = NULL;
