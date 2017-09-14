@@ -210,6 +210,8 @@ char *input_dialog(const char *description, const char *placeholder)
 		result = strdup(trim_whitespaces(field_buffer(fields[0], 0)));
 	}
 
+	curs_set(0);
+
 	free_form(form);
 	free_field(fields[0]);
 
@@ -241,8 +243,6 @@ void ldap_save_subtree(TREENODE * selected_node)
 		free(filename);
 		filename = NULL;
 	}
-
-	curs_set(0);
 
 	free(nameSuggestion);
 	nameSuggestion = NULL;
