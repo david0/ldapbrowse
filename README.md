@@ -25,7 +25,8 @@ The CLI is a subset of [ldapsearch](http://linux.die.net/man/1/ldapsearch):
 ## key bindings
 
 `D`: delete selected node 
-`s`: save as LDIF
+`s`: save as LDIF 
+`f`: filtered search
 
 
 ## Wishlist

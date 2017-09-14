@@ -61,11 +61,11 @@ void ldap_show_error(LDAP * ld, int errno, const char *s)
 	wrefresh(attrwin);
 }
 
-void ldap_load_subtree(TREENODE * root)
+void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
 {
 	LDAPMessage *msg;
 	char *dn = node_dn(root);
-	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg);
+	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_ONE, filter, NULL, 0, &msg);
 	if (errno != LDAP_SUCCESS)
 	{
 		ldap_show_error(ld, errno, "ldap_search_s");
@@ -89,6 +89,11 @@ void ldap_load_subtree(TREENODE * root)
 	}
 
 	ldap_msgfree(msg);
+}
+
+void ldap_load_subtree(TREENODE * root)
+{
+	ldap_load_subtree_filtered(root, "(objectClass=*)");
 }
 
 void selection_changed(WINDOW * win, TREENODE * selection)
@@ -137,7 +142,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	wrefresh(win);
 }
 
-void ldap_save_subtree(TREENODE * selected_node)
+char *input_dialog(const char *description, const char *placeholder)
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
@@ -150,10 +155,7 @@ void ldap_save_subtree(TREENODE * selected_node)
 		NULL
 	};
 
-	char *nameSuggestion = NULL;
-	asprintf(&nameSuggestion, "%s.ldif",
-		 string_after_last(string_before(node_dn(selected_node), ','), '='));
-	set_field_buffer(fields[0], 0, nameSuggestion);
+	set_field_buffer(fields[0], 0, placeholder);
 
 	curs_set(1);
 
@@ -162,7 +164,7 @@ void ldap_save_subtree(TREENODE * selected_node)
 	set_form_sub(form, derwin(dlg, winheight - 2, winwidth - 2, 1, 1));
 	post_form(form);
 
-	mvwaddstr(dlg, 1, 2, "Save as:");
+	mvwaddstr(dlg, 1, 2, description);
 	wrefresh(dlg);
 
 	char ch;
@@ -201,10 +203,40 @@ void ldap_save_subtree(TREENODE * selected_node)
 	}
 	form_driver(form, REQ_NEXT_FIELD);
 
+	char *result = NULL;
 	bool canceled = (ch == KEY_ESC);
 	if (!canceled)
 	{
-		char *filename = trim_whitespaces(field_buffer(fields[0], 0));
+		result = strdup(trim_whitespaces(field_buffer(fields[0], 0)));
+	}
+
+	free_form(form);
+	free_field(fields[0]);
+
+	return result;
+}
+
+void filtered_search(TREENODE * selected_node)
+{
+	char *filter = input_dialog("Filter:", "(objectClass=*)");
+	if (filter)
+	{
+		ldap_load_subtree_filtered(selected_node, filter);
+		free(filter);
+		filter = NULL;
+	}
+}
+
+void ldap_save_subtree(TREENODE * selected_node)
+{
+
+	char *nameSuggestion = NULL;
+	asprintf(&nameSuggestion, "%s.ldif",
+		 string_after_last(string_before(node_dn(selected_node), ','), '='));
+
+	char *filename = input_dialog("Save as:", nameSuggestion);
+	if (filename)
+	{
 		ldif_write(ld, filename, node_dn(selected_node), attributes);
 		free(filename);
 		filename = NULL;
@@ -214,8 +246,6 @@ void ldap_save_subtree(TREENODE * selected_node)
 
 	free(nameSuggestion);
 	nameSuggestion = NULL;
-	free_form(form);
-	free_field(fields[0]);
 
 }
 
@@ -345,6 +375,14 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				selection_changed(attrwin, treeview_current_node(treeview));
 			}
 			break;
+
+		case 'f':
+			{
+				filtered_search(treeview_current_node(treeview));
+				treeview_driver(treeview, 0);
+				selection_changed(attrwin, treeview_current_node(treeview));
+			}
+			break;
 		}
 
 		mvhline(height / 2, 0, 0, width);
@@ -434,6 +472,9 @@ int main(int argc, char *argv[])
 	if (ldap_uri == NULL)
 	{
 		asprintf(&ldap_uri, "ldap://%s:%d", ldap_host, port);
+	} else
+	{
+		ldap_uri = strdup(ldap_uri);
 	}
 
 	if (ldap_initialize(&ld, ldap_uri) != LDAP_SUCCESS)
@@ -503,4 +544,11 @@ int main(int argc, char *argv[])
 	render(root, ldap_load_subtree);
 
 	endwin();
+
+	tree_node_remove_childs(root);
+	free(root);
+	root = NULL;
+
+	free(ldap_uri);
+	ldap_uri = NULL;
 }
