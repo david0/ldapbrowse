@@ -86,6 +86,8 @@ void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
 		child->value = strdup(dns[0]);
 		tree_node_append_child(root, child);
 		ldap_value_free(dns);
+		free(dn);
+		dn = NULL;
 	}
 
 	ldap_msgfree(msg);
@@ -167,24 +169,21 @@ char *input_dialog(const char *description, const char *placeholder)
 
 	wrefresh(dlg);
 
-	char ch;
+	int ch;
 	while (ch = getch(), (ch != KEY_ENTER) && (ch != KEY_ENTER_MAC) && (ch != KEY_ESC))
 	{
 		switch (ch)
 		{
 		case KEY_LEFT:
-		case 4:
 			form_driver(form, REQ_PREV_CHAR);
 			break;
 
 		case KEY_RIGHT:
-		case 5:
 			form_driver(form, REQ_NEXT_CHAR);
 			break;
 			// Delete the char before cursor
 		case KEY_BACKSPACE:
 		case 127:
-		case 7:
 			form_driver(form, REQ_DEL_PREV);
 			break;
 
@@ -212,6 +211,7 @@ char *input_dialog(const char *description, const char *placeholder)
 
 	curs_set(0);
 
+	unpost_form(form);
 	free_form(form);
 	free_field(fields[0]);
 
@@ -233,13 +233,20 @@ void ldap_save_subtree(TREENODE * selected_node)
 {
 
 	char *nameSuggestion = NULL;
-	asprintf(&nameSuggestion, "%s.ldif",
-		 string_after_last(string_before(node_dn(selected_node), ','), '='));
+	char *dn = node_dn(selected_node);
+	char *rdn = string_before(dn, ',');
+	asprintf(&nameSuggestion, "%s.ldif", string_after_last(rdn, '='));
+	free(dn);
+	dn = NULL;
+	free(rdn);
+	rdn = NULL;
 
 	char *filename = input_dialog("Save as:", nameSuggestion);
 	if (filename)
 	{
-		ldif_write(ld, filename, node_dn(selected_node), attributes);
+		char *dn = node_dn(selected_node);
+		ldif_write(ld, filename, dn, attributes);
+		free(dn);
 		free(filename);
 		filename = NULL;
 	}
@@ -311,7 +318,6 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			treeview_set_format(treeview, height / 2, width);
 			treeview_set_current(treeview, selected_node);
 			treeview_driver(treeview, 0);
-
 
 			break;
 		case KEY_UP:
@@ -435,7 +441,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'b':
-			base = optarg;
+			base = strdup(optarg);
 			break;
 
 		case 'a':
@@ -522,7 +528,17 @@ int main(int argc, char *argv[])
 		}
 
 		if (values)
-			base = values[0];
+		{
+			base = strdup(values[0]);
+		}
+
+		for (unsigned i = 0; values[i]; i++)
+		{
+			free(values[i]);
+			values[i] = NULL;
+		}
+		free(values);
+		values = NULL;
 
 		ldap_msgfree(msg);
 		msg = NULL;
@@ -546,8 +562,11 @@ int main(int argc, char *argv[])
 	endwin();
 
 	tree_node_remove_childs(root);
+	free(root->value);
 	free(root);
 	root = NULL;
+
+	free(base);
 
 	free(ldap_uri);
 	ldap_uri = NULL;
