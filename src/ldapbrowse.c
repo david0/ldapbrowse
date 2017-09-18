@@ -159,12 +159,12 @@ char *input_dialog(const char *description, const char *placeholder)
 
 	curs_set(1);
 
+	mvwaddstr(dlg, 1, 2, description);
 	FORM *form = new_form(fields);
 	set_form_win(form, dlg);
-	set_form_sub(form, derwin(dlg, winheight - 2, winwidth - 2, 1, 1));
+	set_form_sub(form, derwin(dlg, winheight - 3, winwidth - 2, 2, 1));
 	post_form(form);
 
-	mvwaddstr(dlg, 1, 2, description);
 	wrefresh(dlg);
 
 	char ch;
