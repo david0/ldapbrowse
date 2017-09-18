@@ -307,11 +307,11 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			wresize(attrwin, height / 2 - 1, width);
 			mvwin(attrwin, height / 2 + 1, 0);
 
+			wrefresh(attrwin);
 			treeview_set_format(treeview, height / 2, width);
 			treeview_set_current(treeview, selected_node);
 			treeview_driver(treeview, 0);
 
-			wrefresh(attrwin);
 
 			break;
 		case KEY_UP:
