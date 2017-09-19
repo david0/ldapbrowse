@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <getopt.h>
 
@@ -310,12 +311,13 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 		case KEY_RESIZE:
 			getmaxyx(stdscr, height, width);
 
+			wresize(attrwin, floor(height / 2.0) - 1, width);
+			mvwin(attrwin, floor(height / 2.0) + 1, 0);
+			//clear();
 			refresh();
-			wresize(attrwin, height / 2 - 1, width);
-			mvwin(attrwin, height / 2 + 1, 0);
-
 			wrefresh(attrwin);
-			treeview_set_format(treeview, height / 2, width);
+
+			treeview_set_format(treeview, ceil(height / 2.0), width);
 			treeview_set_current(treeview, selected_node);
 			treeview_driver(treeview, 0);
 
