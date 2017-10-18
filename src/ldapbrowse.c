@@ -18,7 +18,8 @@
 
 LDAP *ld;
 TREEVIEW *treeview;
-WINDOW *attrwin;
+WINDOW *attrpad;
+int attrpad_toprow = 0, attrpad_rows = 0;
 char **attributes;
 
 void curses_init()
@@ -55,11 +56,11 @@ char *node_dn(TREENODE * node)
 void ldap_show_error(LDAP * ld, int errno, const char *s)
 {
 	char *errstr = ldap_err2string(errno);
-	werase(attrwin);
-	waddstr(attrwin, s);
-	waddstr(attrwin, ": ");
-	waddstr(attrwin, errstr);
-	wrefresh(attrwin);
+	werase(attrpad);
+	waddstr(attrpad, s);
+	waddstr(attrpad, ": ");
+	waddstr(attrpad, errstr);
+	wrefresh(attrpad);
 }
 
 void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
@@ -111,6 +112,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		return;
 	}
 
+	attrpad_rows = 1;
 	waddstr(win, "dn: ");
 	waddstr(win, dn);
 	waddstr(win, "\n");
@@ -135,6 +137,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 			waddstr(win, ": ");
 			waddstr(win, values[i]);
 			waddstr(win, "\n");
+			attrpad_rows++;
 		}
 		ldap_value_free(values);
 	}
@@ -142,7 +145,17 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	ber_free(pber, 0);
 	ldap_msgfree(msg);
 
-	wrefresh(win);
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	int attrpad_height = height / 2 + 1;
+
+	// limit scrolling
+	if (attrpad_toprow < 0)
+		attrpad_toprow = 0;
+	if (attrpad_toprow > attrpad_rows + 2 - attrpad_height)
+		attrpad_toprow = attrpad_rows + 2 - attrpad_height;
+
+	prefresh(win, attrpad_toprow, 0, attrpad_height, 0, height - 1, width - 1);
 }
 
 char *input_dialog(const char *description, const char *placeholder)
@@ -279,7 +292,7 @@ TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
 		treeview_set_tree(treeview, root);
 		treeview_set_current(treeview, parent);
 
-		selection_changed(attrwin, parent);
+		selection_changed(attrpad, parent);
 	}
 
 	return parent;
@@ -289,7 +302,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	attrwin = newwin(height / 2 - 1, width, height / 2 + 1, 0);
+	attrpad = newpad(1000, 1000);
 	treeview = treeview_init(height / 2, width);
 
 	treeview_set_tree(treeview, root);
@@ -299,7 +312,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 	mvhline(height / 2, 0, 0, width);
 
-	selection_changed(attrwin, treeview_current_node(treeview));
+	selection_changed(attrpad, treeview_current_node(treeview));
 
 	int c;
 	while ((c = getch()) != 'q')
@@ -311,35 +324,49 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 		case KEY_RESIZE:
 			getmaxyx(stdscr, height, width);
 
-			wresize(attrwin, floor(height / 2.0) - 1, width);
-			mvwin(attrwin, floor(height / 2.0) + 1, 0);
-			//clear();
+			//wresize(attrpad, floor(height / 2.0) - 1, width);
+			//mvwin(attrpad, floor(height / 2.0) + 1, 0);
+			clear();
 			refresh();
-			wrefresh(attrwin);
+			//wrefresh(attrpad);
 
 			treeview_set_format(treeview, ceil(height / 2.0), width);
 			treeview_set_current(treeview, selected_node);
 			treeview_driver(treeview, 0);
 
+			selection_changed(attrpad, treeview_current_node(treeview));
+
 			break;
 		case KEY_UP:
 			treeview_driver(treeview, REQ_UP_ITEM);
-			selection_changed(attrwin, treeview_current_node(treeview));
+			attrpad_toprow = 0;
+			selection_changed(attrpad, treeview_current_node(treeview));
 			break;
 
 		case KEY_DOWN:
 			treeview_driver(treeview, REQ_DOWN_ITEM);
-			selection_changed(attrwin, treeview_current_node(treeview));
+			attrpad_toprow = 0;
+			selection_changed(attrpad, treeview_current_node(treeview));
+			break;
+
+		case 'o':
+			attrpad_toprow++;
+			selection_changed(attrpad, treeview_current_node(treeview));
+			break;
+
+		case 'p':
+			attrpad_toprow--;
+			selection_changed(attrpad, treeview_current_node(treeview));
 			break;
 
 		case KEY_PPAGE:
 			treeview_driver(treeview, REQ_SCR_UPAGE);
-			selection_changed(attrwin, treeview_current_node(treeview));
+			selection_changed(attrpad, treeview_current_node(treeview));
 			break;
 
 		case KEY_NPAGE:
 			treeview_driver(treeview, REQ_SCR_DPAGE);
-			selection_changed(attrwin, treeview_current_node(treeview));
+			selection_changed(attrpad, treeview_current_node(treeview));
 			break;
 
 		case KEY_RIGHT:
@@ -366,9 +393,9 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		case 'D':
 			{
-				werase(attrwin);
-				waddstr(attrwin, "do you really want to delete?");
-				wrefresh(attrwin);
+				werase(attrpad);
+				waddstr(attrpad, "do you really want to delete?");
+				wrefresh(attrpad);
 				if (getch() == 'y')
 					selected_node = ldap_delete_subtree(root, selected_node);
 
@@ -380,7 +407,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 				ldap_save_subtree(selected_node);
 
 				treeview_driver(treeview, 0);
-				selection_changed(attrwin, treeview_current_node(treeview));
+				selection_changed(attrpad, treeview_current_node(treeview));
 			}
 			break;
 
@@ -388,7 +415,7 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			{
 				filtered_search(treeview_current_node(treeview));
 				treeview_driver(treeview, 0);
-				selection_changed(attrwin, treeview_current_node(treeview));
+				selection_changed(attrpad, treeview_current_node(treeview));
 			}
 			break;
 		}
