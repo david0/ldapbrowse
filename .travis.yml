@@ -1,11 +1,19 @@
 language: C
-
 sudo: required
-
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -qq valgrind
-
+- sudo apt-get -qq update
+- sudo apt-get install -qq valgrind
 script:
-  - (cd src && make)
-  - (cd test && make)
+- "(cd src && make)"
+- "(cd test && make)"
+- "(cd src && make clean tar)"
+before_deploy:
+- export RELEASE_TAR_FILE=$(ls src/*.tar.gz)
+deploy:
+  provider: releases
+  api_key:
+    secure: ayjWVzWoNexSjl9jDP/B3o4IQmfK1/L3TiDpFUebyjzDKyF3HR5KWXlERuLNgfYaUJ+Z1EypfJmTdL6duL1Swt5Px+5UbT34DTkKwiHmNDj/eQdx55n07fMZ1hAI5IQ8Wy/gF4ySSGXLsFgk7BUZcyhQ6/NIGI1IIhdoKZasbQw9BsZ00LN9K0tinW2dAlLQIoMhpMjw+FLDyGak6fbNJP81AO+dIUTyhbNEUzY42exhr3TvybEKgHk/Y0pme0K3n0K34D8h9eYyjXrgM1YiPW9f80S/Vwm5Ir8IDbQ86+yT43IzlPi9zdeC++qlY//vWsDXJqKnqROT5j6krBWb5wWF+nc1ZRwxvI8YFaJ+rYFzcj7JSrrN9D+z5Zm/bZy5Qj4+czxFBdinSNoHCBqDaYVpwYhIaiuf7P2Z1KXFu+L6vohgoTMUuIfpnW1Z9OJsUT5FydmwI3f2FrTKdjZtlCCSHifHP502XanPosQvLz2+bFw7KC7H2rN2TOZBrA+7gJHY95WZHxoqsCzg7HQDDk0HOIcQnJahky6ASSBF7XrEtZyMujD5Jl+oCOtfBmWtwL8dzaClEXf8GpBe9nu16E0cZ8VxjU6Sb+356nBsYDMj74DpGF5DS12hhWWRDm60CGY1AaWHHT1bxjm2dTgSeZRuHVluxYXJbKiTWkBhUMg=
+  file_glob: true
+  file: "${RELEASE_TAR_FILE}"
+  on:
+    tags: true
