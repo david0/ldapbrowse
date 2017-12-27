@@ -128,7 +128,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		char **values;
 		if (!(values = ldap_get_values(ld, msg, attr)))
 		{
-			ldap_perror(ld, "ldap_get_values");
+			continue;
 		}
 
 		for (unsigned i = 0; values[i]; i++)
