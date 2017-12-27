@@ -27,8 +27,8 @@ The CLI is a subset of [ldapsearch](http://linux.die.net/man/1/ldapsearch):
 `D`: delete selected node  
 `s`: save as LDIF  
 `f`: filtered search  
-`o': scroll attribute window up
-`p': scroll attribute window down
+`o`: scroll attribute window up  
+`p`: scroll attribute window down
 
 ## Wishlist
 
