@@ -12,7 +12,9 @@ void test_string_after_last()
 void test_string_before()
 {
 	char *dn = "o=bar,dc=root";
-	assert(strcmp("o=bar", string_before(dn, ',')) == 0);
+	char *before = string_before(dn, ',');
+	assert(strcmp("o=bar", before) == 0);
+	free(before);
 }
 
 int main()

@@ -17,11 +17,11 @@ treeview: ../src/tree.o ../src/treeview.o treeview.o
 tree: ../src/tree.o tree.o
 				$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-stringUtilsTest: ../src/stringutils.o stringutils.o
+stringUtils: ../src/stringutils.o stringutils.o
 				$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %Test: %
-				@printf  "Runnig %-50s" $<...
+				@printf  "Running %-50s" $<...
 				@$(RUNNER) ./$<
 				@echo "OK"
 
