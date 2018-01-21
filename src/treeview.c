@@ -24,6 +24,7 @@ void treeview_set_format(TREEVIEW * tv, unsigned rows, unsigned cols)
 {
 	tv->height = rows;
 	tv->width = cols;
+	wresize(tv->win, tv->height, tv->width);
 }
 
 void treeview_set_tree(TREEVIEW * tv, TREENODE * root)
