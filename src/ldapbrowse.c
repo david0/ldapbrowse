@@ -188,6 +188,18 @@ char *input_dialog(const char *description, const char *placeholder)
 	{
 		switch (ch)
 		{
+		case KEY_RESIZE:
+			getmaxyx(stdscr, height, width);
+
+			clear();
+			refresh();
+
+			winwidth = width - 10;
+			wresize(dlg, winheight, winwidth);
+			wmove(dlg, height-winheight/2, 2);
+			box(dlg, 0, 0);
+			wrefresh(dlg);
+			break;
 		case KEY_LEFT:
 			form_driver(form, REQ_PREV_CHAR);
 			break;
@@ -321,22 +333,6 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		switch (c)
 		{
-		case KEY_RESIZE:
-			getmaxyx(stdscr, height, width);
-
-			//wresize(attrpad, floor(height / 2.0) - 1, width);
-			//mvwin(attrpad, floor(height / 2.0) + 1, 0);
-			clear();
-			refresh();
-			//wrefresh(attrpad);
-
-			treeview_set_format(treeview, ceil(height / 2.0), width);
-			treeview_set_current(treeview, selected_node);
-			treeview_driver(treeview, 0);
-
-			selection_changed(attrpad, treeview_current_node(treeview));
-
-			break;
 		case KEY_UP:
 			treeview_driver(treeview, REQ_UP_ITEM);
 			attrpad_toprow = 0;
