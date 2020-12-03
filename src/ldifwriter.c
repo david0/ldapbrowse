@@ -1,6 +1,8 @@
 #include "ldifwriter.h"
+#include "ldapbrowse.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 void ldif_write(LDAP * ld, const char *filename, const char *dn, char **attributes)
 {

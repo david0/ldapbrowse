@@ -10,6 +10,7 @@
 #include <form.h>
 #include <menu.h>
 #include "tree.h"
+#include "ldifwriter.h"
 #include "treeview.h"
 #include "stringutils.h"
 
