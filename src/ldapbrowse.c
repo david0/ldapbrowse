@@ -23,6 +23,14 @@ WINDOW *attrpad;
 int attrpad_toprow = 0, attrpad_rows = 0;
 char **attributes;
 
+struct INPUT_DIALOG {
+	WINDOW *win;
+	FORM *form;
+	FIELD *fields[2];
+};
+
+void resize();
+
 void curses_init()
 {
 	setenv("ESCDELAY", "0", 0);
@@ -159,30 +167,51 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 	prefresh(win, attrpad_toprow, 0, attrpad_height, 0, height - 1, width - 1);
 }
 
-char *input_dialog(const char *description, const char *placeholder)
+struct INPUT_DIALOG input_dialog_create(const char *description, const char *placeholder)
 {
+	struct INPUT_DIALOG dlg;
 	int height, width;
 	getmaxyx(stdscr, height, width);
 	int winheight = 10, winwidth = width - 10;
-	WINDOW *dlg = newwin(winheight, winwidth, (height - winheight) / 2, 2);
-	box(dlg, 0, 0);
+	dlg.win = newwin(winheight, winwidth, (height - winheight) / 2, 2);
+	box(dlg.win, 0, 0);
 
-	FIELD *fields[] = {
-		new_field(1, winwidth - 5, 3, 2, 0, 0),
-		NULL
-	};
+	dlg.fields[0] = new_field(1, winwidth - 5, 3, 2, 0, 0);
+	dlg.fields[1] = NULL;
 
-	set_field_buffer(fields[0], 0, placeholder);
+	set_field_buffer(dlg.fields[0], 0, placeholder);
 
 	curs_set(1);
 
-	mvwaddstr(dlg, 1, 2, description);
-	FORM *form = new_form(fields);
-	set_form_win(form, dlg);
-	set_form_sub(form, derwin(dlg, winheight - 3, winwidth - 2, 2, 1));
-	post_form(form);
+	mvwaddstr(dlg.win, 1, 2, description);
+	dlg.form = new_form(dlg.fields);
+	set_form_win(dlg.form, dlg.win);
+	set_form_sub(dlg.form, derwin(dlg.win, winheight - 3, winwidth - 2, 2, 1));
+	post_form(dlg.form);
 
-	wrefresh(dlg);
+	wrefresh(dlg.win);
+	return dlg;
+}
+
+void input_dialog_close(struct INPUT_DIALOG dlg)
+{
+	curs_set(0);
+
+	unpost_form(dlg.form);
+	free_form(dlg.form);
+	dlg.form = NULL;
+	free_field(dlg.fields[0]);
+	dlg.fields[0] = NULL;
+}
+
+char *input_dialog_value(struct INPUT_DIALOG dlg)
+{
+	return strdup(trim_whitespaces(field_buffer(dlg.fields[0], 0)));
+}
+
+char *input_dialog(const char *description, const char *placeholder)
+{
+	struct INPUT_DIALOG dlg = input_dialog_create(description, placeholder);
 
 	int ch;
 	while (ch = getch(), (ch != KEY_ENTER) && (ch != KEY_ENTER_MAC) && (ch != KEY_ESC))
@@ -190,57 +219,52 @@ char *input_dialog(const char *description, const char *placeholder)
 		switch (ch)
 		{
 		case KEY_RESIZE:
-			getmaxyx(stdscr, height, width);
-
-			clear();
-			refresh();
-
-			winwidth = width - 10;
-			wresize(dlg, winheight, winwidth);
-			wmove(dlg, height-winheight/2, 2);
-			box(dlg, 0, 0);
-			wrefresh(dlg);
-			break;
+			{
+				form_driver(dlg.form, REQ_VALIDATION);
+				char *current_value = input_dialog_value(dlg);
+				input_dialog_close(dlg);
+				clear();
+				resize();
+				refresh();
+				dlg = input_dialog_create(description, current_value);
+				break;
+			}
 		case KEY_LEFT:
-			form_driver(form, REQ_PREV_CHAR);
+			form_driver(dlg.form, REQ_PREV_CHAR);
 			break;
 
 		case KEY_RIGHT:
-			form_driver(form, REQ_NEXT_CHAR);
+			form_driver(dlg.form, REQ_NEXT_CHAR);
 			break;
 			// Delete the char before cursor
 		case KEY_BACKSPACE:
 		case 127:
-			form_driver(form, REQ_DEL_PREV);
+			form_driver(dlg.form, REQ_DEL_PREV);
 			break;
 
 			// Delete the char under the cursor
 		case KEY_DC:
 		case 74:
-			form_driver(form, REQ_DEL_CHAR);
+			form_driver(dlg.form, REQ_DEL_CHAR);
 			break;
 
 		default:
-			form_driver(form, ch);
+			form_driver(dlg.form, ch);
 			break;
 		}
 
-		wrefresh(dlg);
+		wrefresh(dlg.win);
 	}
-	form_driver(form, REQ_NEXT_FIELD);
+	form_driver(dlg.form, REQ_VALIDATION);
 
 	char *result = NULL;
 	bool canceled = (ch == KEY_ESC);
 	if (!canceled)
 	{
-		result = strdup(trim_whitespaces(field_buffer(fields[0], 0)));
+		result = input_dialog_value(dlg);
 	}
 
-	curs_set(0);
-
-	unpost_form(form);
-	free_form(form);
-	free_field(fields[0]);
+	input_dialog_close(dlg);
 
 	return result;
 }
@@ -311,6 +335,19 @@ TREENODE *ldap_delete_subtree(TREENODE * root, TREENODE * selected_node)
 	return parent;
 }
 
+void resize()
+{
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	treeview_set_format(treeview, height / 2, width);
+
+	refresh();
+	treeview_driver(treeview, 0);
+	mvhline(height / 2, 0, 0, width);
+	attrpad_toprow = 0;
+	selection_changed(attrpad, treeview_current_node(treeview));
+}
+
 void render(TREENODE * root, void (expand_callback) (TREENODE *))
 {
 	int height, width;
@@ -334,6 +371,9 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		switch (c)
 		{
+		case KEY_RESIZE:
+			resize();
+			break;
 		case KEY_UP:
 			treeview_driver(treeview, REQ_UP_ITEM);
 			attrpad_toprow = 0;
@@ -417,8 +457,8 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 			break;
 		}
 
+		getmaxyx(stdscr, height, width);
 		mvhline(height / 2, 0, 0, width);
-
 	}
 
 	treeview_free(treeview);
