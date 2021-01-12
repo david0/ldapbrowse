@@ -532,6 +532,7 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
+			fprintf(stderr, "USAGE: %s [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost] [-p ldapport] [-b searchbase] [-a {never|always|search|find}] [attributes...]\n", argv[0]);
 			exit(-1);
 		}
 	}
