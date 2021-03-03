@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
 			base = strdup(values[0]);
 		}
 
-		for (unsigned i = 0; values[i]; i++)
+		for (unsigned i = 0; values && values[i]; i++)
 		{
 			free(values[i]);
 			values[i] = NULL;
