@@ -532,7 +532,9 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			fprintf(stderr, "USAGE: %s [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost] [-p ldapport] [-b searchbase] [-a {never|always|search|find}] [attributes...]\n", argv[0]);
+			fprintf(stderr,
+				"USAGE: %s [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost] [-p ldapport] [-b searchbase] [-a {never|always|search|find}] [attributes...]\n",
+				argv[0]);
 			exit(-1);
 		}
 	}
@@ -580,32 +582,25 @@ int main(int argc, char *argv[])
 	LDAPMessage *msg;
 	if (!base)
 	{
-		char **values;
+		char *dn;
 
-		if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) !=
+		if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectclass=*)", NULL, 0, &msg) !=
 		    LDAP_SUCCESS)
 		{
 			ldap_perror(ld, "ldap_get_values");
 			exit(EXIT_FAILURE);
 		}
 
-		if (!(values = ldap_get_values(ld, msg, "namingContexts")))
+		if (!(dn = ldap_get_dn(ld, msg)))
 		{
-			ldap_perror(ld, "ldap_get_values");
+			ldap_perror(ld, "ldap_get_dn");
+		} else
+		{
+			base = strdup(dn);
 		}
 
-		if (values)
-		{
-			base = strdup(values[0]);
-		}
-
-		for (unsigned i = 0; values && values[i]; i++)
-		{
-			free(values[i]);
-			values[i] = NULL;
-		}
-		free(values);
-		values = NULL;
+		free(dn);
+		dn = NULL;
 
 		ldap_msgfree(msg);
 		msg = NULL;
