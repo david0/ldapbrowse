@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install build dependencies
-      - run: sudo apt-get -qq update && sudo apt-get install -qq valgrind clang libldap2-dev libncurses-dev
+        run: sudo apt-get -qq update && sudo apt-get install -qq valgrind clang libldap2-dev libncurses-dev
       - name: Checkout
         uses: actions/checkout@v2
       - name: build
