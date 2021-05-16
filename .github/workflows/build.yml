@@ -11,6 +11,7 @@ jobs:
       - name: build
         run: (cd src && make)
       - name: test
+        shell: 'script -q -e -c "bash {0}"'
         run: (cd test && make)
       - name: package
         run: (cd src && make clean tar)
