@@ -1,0 +1,11 @@
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get -qq update
+      - run: sudo apt-get install -qq valgrind clang libldap2-dev libncurses-dev
+      - run: (cd src && make)
+      - run: (cd test && make)
+      - run: (cd src && make clean tar)
