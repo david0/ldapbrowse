@@ -4,8 +4,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt-get -qq update
-      - run: sudo apt-get install -qq valgrind clang libldap2-dev libncurses-dev
-      - run: (cd src && make)
-      - run: (cd test && make)
-      - run: (cd src && make clean tar)
+      - name: install build dependencies
+      - run: sudo apt-get -qq update && sudo apt-get install -qq valgrind clang libldap2-dev libncurses-dev
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: build
+        run: (cd src && make)
+      - name: test
+        run: (cd test && make)
+      - name: package
+        run: (cd src && make clean tar)
+      - run: export RELEASE_TAR_FILE=$(ls src/*.tar.gz)
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: Release.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
