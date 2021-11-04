@@ -94,11 +94,20 @@ void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
 		TREENODE *child = tree_node_alloc();
 		char *dn = ldap_get_dn(ld, entry);
 		char **dns = ldap_explode_dn(dn, 0);
-		child->value = strdup(dns[0]);
-		tree_node_append_child(root, child);
-		ldap_value_free(dns);
 		free(dn);
 		dn = NULL;
+
+		// normalize to LDAPV2 to replace \2B by \+ (more readable)
+		char *rdnout = NULL;
+		if (ldap_dn_normalize(dns[0] , LDAP_DN_FORMAT_LDAP, &rdnout, LDAP_DN_FORMAT_LDAPV2) != LDAP_SUCCESS) {
+			ldap_show_error(ld, errno, "ldap_search_s");
+			return;
+		}
+		ldap_value_free(dns);
+		dns = NULL;
+
+		child->value = rdnout;
+		tree_node_append_child(root, child);
 	}
 
 	ldap_msgfree(msg);
