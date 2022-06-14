@@ -62,14 +62,29 @@ char *node_dn(TREENODE * node)
 	return dn;
 }
 
+WINDOW *show_message(const char *line1, const char *line2)
+{
+	int screen_height, screen_width;
+	getmaxyx(stdscr, screen_height, screen_width);
+	int height = 6, width = screen_width - 10;
+	WINDOW *win = newwin(height, width, (screen_height - height) / 2, 2);
+
+	box(win, 0, 0);
+
+	mvwaddstr(win, 2, 2, line1);
+	mvwaddstr(win, 3, 2, line2);
+
+	wrefresh(win);
+	return win;
+}
+
 void ldap_show_error(LDAP * ld, int errno, const char *s)
 {
+	char *text = malloc(2000);
+
 	char *errstr = ldap_err2string(errno);
-	werase(attrpad);
-	waddstr(attrpad, s);
-	waddstr(attrpad, ": ");
-	waddstr(attrpad, errstr);
-	wrefresh(attrpad);
+	show_message("LDAP error occured", errstr);
+	getch();
 }
 
 void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
@@ -99,7 +114,9 @@ void ldap_load_subtree_filtered(TREENODE * root, const char *filter)
 
 		// normalize to LDAPV2 to replace \2B by \+ (more readable)
 		char *rdnout = NULL;
-		if (ldap_dn_normalize(dns[0] , LDAP_DN_FORMAT_LDAP, &rdnout, LDAP_DN_FORMAT_LDAPV2) != LDAP_SUCCESS) {
+		if (ldap_dn_normalize(dns[0], LDAP_DN_FORMAT_LDAP, &rdnout, LDAP_DN_FORMAT_LDAPV2)
+		    != LDAP_SUCCESS)
+		{
 			ldap_show_error(ld, errno, "ldap_search_s");
 			return;
 		}
@@ -172,20 +189,20 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		attrpad_toprow = 0;
 	if (attrpad_toprow > attrpad_rows + 2 - attrpad_height)
 		attrpad_toprow = attrpad_rows + 2 - attrpad_height;
-
 	prefresh(win, attrpad_toprow, 0, attrpad_height, 0, height - 1, width - 1);
 }
 
 struct INPUT_DIALOG input_dialog_create(const char *description, const char *placeholder)
 {
 	struct INPUT_DIALOG dlg;
+
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	int winheight = 10, winwidth = width - 10;
+	int winheight = 6, winwidth = width - 10;
 	dlg.win = newwin(winheight, winwidth, (height - winheight) / 2, 2);
 	box(dlg.win, 0, 0);
 
-	dlg.fields[0] = new_field(1, winwidth - 5, 3, 2, 0, 0);
+	dlg.fields[0] = new_field(1, winwidth - 5, 1, 2, 0, 0);
 	dlg.fields[1] = NULL;
 
 	set_field_buffer(dlg.fields[0], 0, placeholder);
@@ -439,11 +456,18 @@ void render(TREENODE * root, void (expand_callback) (TREENODE *))
 
 		case 'D':
 			{
-				werase(attrpad);
-				waddstr(attrpad, "do you really want to delete?");
-				wrefresh(attrpad);
+				char *dn = node_dn(selected_node);
+				WINDOW *msg =
+				    show_message
+				    ("do you really want to delete the following DN? (y/n)", dn);
+				free(dn);
+				dn = NULL;
 				if (getch() == 'y')
 					selected_node = ldap_delete_subtree(root, selected_node);
+
+				delwin(msg);
+				treeview_driver(treeview, 0);
+				selection_changed(attrpad, treeview_current_node(treeview));
 
 			}
 			break;
@@ -541,7 +565,9 @@ int main(int argc, char *argv[])
 			break;
 
 		default:
-			fprintf(stderr, "USAGE: %s [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost] [-p ldapport] [-b searchbase] [-a {never|always|search|find}] [attributes...]\n", argv[0]);
+			fprintf(stderr,
+				"USAGE: %s [-H ldapuri] [-D binddn] [-w passwd] [-h ldaphost] [-p ldapport] [-b searchbase] [-a {never|always|search|find}] [attributes...]\n",
+				argv[0]);
 			exit(-1);
 		}
 	}
