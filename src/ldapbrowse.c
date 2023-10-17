@@ -137,7 +137,6 @@ void ldap_load_subtree(TREENODE * root)
 
 void selection_changed(WINDOW * win, TREENODE * selection)
 {
-	werase(win);
 	LDAPMessage *msg;
 	char *dn = node_dn(selection);
 	int errno = ldap_search_s(ld, dn, LDAP_SCOPE_BASE, "(objectClass=*)", attributes, 0, &msg);
@@ -147,6 +146,7 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		return;
 	}
 
+	wclear(win);
 	attrpad_rows = 1;
 	waddstr(win, "dn: ");
 	waddstr(win, dn);
