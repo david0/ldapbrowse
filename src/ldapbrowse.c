@@ -146,6 +146,13 @@ void selection_changed(WINDOW * win, TREENODE * selection)
 		return;
 	}
 
+	// use DN that is returned by search to ensure correct capitalization
+	// we have the case where namingContext has a different capitalization than what is returned in all search results
+	// as the root node in the tree is build based on namingContext, the wrong capitalization is carried trough
+	free(dn);
+	dn = NULL;
+	dn = ldap_get_dn(ld, msg);
+
 	wclear(win);
 	attrpad_rows = 1;
 	waddstr(win, "dn: ");
