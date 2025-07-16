@@ -624,7 +624,7 @@ int main(int argc, char *argv[])
 	{
 		char **values;
 
-		if (ldap_search_s(ld, "", LDAP_SCOPE_ONE, "(objectClass=*)", NULL, 0, &msg) !=
+		if (ldap_search_s(ld, "", LDAP_SCOPE_BASE, "(objectClass=*)", NULL, 0, &msg) !=
 		    LDAP_SUCCESS)
 		{
 			ldap_perror(ld, "ldap_get_values");
